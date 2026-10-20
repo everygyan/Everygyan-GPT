@@ -70,7 +70,7 @@ CREATE POLICY "Users can update their own non-role profile fields"
 CREATE OR REPLACE FUNCTION public.handle_profile_role_protection()
 RETURNS trigger AS $$
 BEGIN
-  IF NEW.role IS DISTINCT FROM OLD.role THEN
+  IF auth.uid() IS NOT NULL AND NEW.role IS DISTINCT FROM OLD.role THEN
     IF NOT EXISTS (
       SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
     ) THEN
