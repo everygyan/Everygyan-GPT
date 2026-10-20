@@ -1,8 +1,14 @@
 import React from 'react';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const TermsPage: React.FC = () => {
   return (
     <div className="max-w-3xl mx-auto py-10 sm:py-16 prose prose-slate">
+      <SeoHead
+        title="Terms and Conditions"
+        description="EveryGyan terms of service, community guidelines, editorial notices, and intellectual property conditions."
+        canonicalUrl="/terms"
+      />
       <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-2 not-prose">
         Legal Notice
       </span>

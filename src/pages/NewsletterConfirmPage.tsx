@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
 import { confirmSubscription } from '../services/newsletterService';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const NewsletterConfirmPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -37,6 +38,11 @@ export const NewsletterConfirmPage: React.FC = () => {
 
   return (
     <div className="max-w-xl mx-auto py-16 sm:py-24 px-4 text-center">
+      <SeoHead
+        title="Confirm Subscription"
+        description="Verify your newsletter subscription."
+        robots="noindex, nofollow"
+      />
       <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-6 shadow-sm">
         <Mail className="w-8 h-8" />
       </div>

@@ -1,9 +1,15 @@
 import React from 'react';
 import { BookOpen, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto py-10 sm:py-16">
+      <SeoHead
+        title="About Us — Our Mission & Editorial Standards"
+        description="EveryGyan was founded on the belief that authoritative, practical, and inspiring knowledge should be accessible to everyone, everywhere without paywalls."
+        canonicalUrl="/about"
+      />
       <div className="text-center mb-12">
         <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-2">
           Our Mission

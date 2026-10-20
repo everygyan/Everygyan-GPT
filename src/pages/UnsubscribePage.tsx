@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { ShieldCheck, CheckCircle2, AlertCircle, Loader2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { unsubscribeFromNewsletter, subscribeToNewsletter } from '../services/newsletterService';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const UnsubscribePage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -54,6 +55,11 @@ export const UnsubscribePage: React.FC = () => {
 
   return (
     <div className="max-w-xl mx-auto py-16 sm:py-24 px-4 text-center">
+      <SeoHead
+        title="Newsletter Preferences & Unsubscribe"
+        description="Manage your EveryGyan newsletter subscription preferences or unsubscribe."
+        robots="noindex, nofollow"
+      />
       <div className="w-16 h-16 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-6 shadow-sm">
         <ShieldCheck className="w-8 h-8 text-slate-800" />
       </div>

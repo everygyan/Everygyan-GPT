@@ -12,6 +12,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+import { SeoHead } from '../common/SeoHead';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -38,6 +39,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col md:flex-row">
+      <SeoHead
+        title="Editorial Dashboard"
+        description="EveryGyan internal editorial management dashboard."
+        robots="noindex, nofollow"
+      />
       {/* Mobile Top Header */}
       <div className="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
         <Link to="/" className="text-xl font-bold tracking-tight">

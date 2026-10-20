@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Send, CheckCircle2 } from 'lucide-react';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
@@ -22,6 +23,11 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto py-10 sm:py-16">
+      <SeoHead
+        title="Contact Us — Editorial Enquiries & Feedback"
+        description="Get in touch with the EveryGyan editorial and writing team for news tips, content inquiries, feedback, or support."
+        canonicalUrl="/contact"
+      />
       <div className="text-center mb-10">
         <span className="text-xs font-bold uppercase tracking-wider text-red-600 block mb-2">
           Get In Touch

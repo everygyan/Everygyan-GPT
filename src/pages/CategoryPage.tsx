@@ -7,6 +7,7 @@ import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import { Article, Category } from '../types';
+import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
 export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -42,6 +43,33 @@ export const CategoryPage: React.FC = () => {
 
   return (
     <div className="py-6 sm:py-10 space-y-8">
+      <SeoHead
+        title={`${category?.name || slug} Stories & Guides`}
+        description={
+          category?.description ||
+          `Explore verified editorial articles, news, and learning guides in ${category?.name || slug} on EveryGyan.`
+        }
+        canonicalUrl={`/category/${slug}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: SITE_URL,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: category?.name || slug,
+              item: `${SITE_URL}/category/${slug}`,
+            },
+          ],
+        }}
+      />
+
       {/* Breadcrumbs */}
       <nav className="flex items-center space-x-2 text-xs text-slate-500" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-red-600 transition-colors">

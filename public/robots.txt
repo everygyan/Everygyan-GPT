@@ -1,0 +1,26 @@
+# EveryGyan robots.txt
+# Website: https://everygyan.com
+# Knowledge for Everyone, Everywhere
+
+User-agent: *
+Allow: /
+Allow: /article/
+Allow: /category/
+Allow: /tag/
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+
+# Disallow private dashboard, admin, account management, search result URLs, and transactional utilities
+Disallow: /dashboard/
+Disallow: /dashboard/*
+Disallow: /search
+Disallow: /search*
+Disallow: /reset-password
+Disallow: /unsubscribe
+Disallow: /unsubscribe*
+Disallow: /newsletter/confirm*
+
+# XML Sitemap Index
+Sitemap: https://everygyan.com/sitemap.xml

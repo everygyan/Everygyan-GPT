@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const ResetPasswordPage: React.FC = () => {
   const [password, setPassword] = useState('');
@@ -37,6 +38,11 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <div className="py-16 sm:py-24 max-w-md mx-auto px-4">
+      <SeoHead
+        title="Reset Password"
+        description="Choose a secure new password for your EveryGyan account."
+        robots="noindex, nofollow"
+      />
       <div className="bg-white p-8 rounded-3xl border border-slate-200/90 shadow-xl">
         <div className="text-center mb-6">
           <div className="inline-block mb-2">

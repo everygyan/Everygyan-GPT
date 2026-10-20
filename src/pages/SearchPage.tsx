@@ -6,6 +6,7 @@ import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import { Article } from '../types';
+import { SeoHead } from '../components/common/SeoHead';
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -59,6 +60,13 @@ export const SearchPage: React.FC = () => {
 
   return (
     <div className="py-6 sm:py-10 space-y-8">
+      <SeoHead
+        title={queryParam ? `Search: "${queryParam}"` : 'Search Articles'}
+        description="Search across EveryGyan editorial archives, guides, tutorials, and travel features."
+        canonicalUrl="/search"
+        robots="noindex, follow"
+      />
+
       {/* Breadcrumb Trail */}
       <nav className="flex items-center space-x-2 text-xs text-slate-500" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-red-600 transition-colors">

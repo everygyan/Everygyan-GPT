@@ -6,6 +6,7 @@ import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import { Article } from '../types';
+import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
 export const TagPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -40,6 +41,30 @@ export const TagPage: React.FC = () => {
 
   return (
     <div className="py-6 sm:py-10 space-y-8">
+      <SeoHead
+        title={`#${tagName} Articles & Stories`}
+        description={`Explore all EveryGyan articles, tutorials, and travel guides tagged with #${tagName}.`}
+        canonicalUrl={`/tag/${slug}`}
+        structuredData={{
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: SITE_URL,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: `#${tagName}`,
+              item: `${SITE_URL}/tag/${slug}`,
+            },
+          ],
+        }}
+      />
+
       {/* Breadcrumb Trail */}
       <nav className="flex items-center space-x-2 text-xs text-slate-500" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-red-600 transition-colors">

@@ -6,6 +6,7 @@ import { TableOfContents } from '../components/article/TableOfContents';
 import { ShareBar } from '../components/article/ShareBar';
 import { CommentSection } from '../components/article/CommentSection';
 import { ArticleCard } from '../components/common/ArticleCard';
+import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 import { Article } from '../types';
 
 export const ArticlePage: React.FC = () => {
@@ -69,6 +70,72 @@ export const ArticlePage: React.FC = () => {
 
   return (
     <article className="max-w-3xl mx-auto py-6 sm:py-10">
+      <SeoHead
+        title={article.seo_title || article.title}
+        description={article.seo_description || article.excerpt}
+        canonicalUrl={`/article/${article.slug}`}
+        ogImage={article.cover_image}
+        ogType="article"
+        publishedAt={article.published_at}
+        authorName={article.author.name}
+        category={article.category}
+        tags={article.tags}
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'NewsArticle',
+            headline: article.title,
+            description: article.excerpt,
+            image: [article.cover_image],
+            datePublished: article.published_at,
+            dateModified: article.published_at,
+            author: {
+              '@type': 'Person',
+              name: article.author.name,
+            },
+            publisher: {
+              '@type': 'NewsMediaOrganization',
+              name: 'EveryGyan',
+              url: SITE_URL,
+              logo: {
+                '@type': 'ImageObject',
+                url: `${SITE_URL}/favicon.svg`,
+              },
+            },
+            mainEntityOfPage: {
+              '@type': 'WebPage',
+              '@id': `${SITE_URL}/article/${article.slug}`,
+            },
+            articleSection: article.category,
+            keywords: article.tags?.join(', '),
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: SITE_URL,
+              },
+              {
+                '@type': 'ListItem',
+                position: 2,
+                name: article.category,
+                item: `${SITE_URL}/category/${article.category_slug}`,
+              },
+              {
+                '@type': 'ListItem',
+                position: 3,
+                name: article.title,
+                item: `${SITE_URL}/article/${article.slug}`,
+              },
+            ],
+          },
+        ]}
+      />
+
       {/* Breadcrumb Trail */}
       <nav className="flex items-center space-x-2 text-xs text-slate-500 mb-6" aria-label="Breadcrumb">
         <Link to="/" className="hover:text-red-600 transition-colors">

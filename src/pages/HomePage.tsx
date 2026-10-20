@@ -14,6 +14,7 @@ import {
   fetchFeaturedArticles,
 } from '../services/articleService';
 import { Article } from '../types';
+import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
 export const HomePage: React.FC = () => {
   const [leadStory, setLeadStory] = useState<Article | null>(null);
@@ -44,6 +45,35 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-8 sm:space-y-12">
+      <SeoHead
+        title="EveryGyan — Knowledge for Everyone, Everywhere"
+        description="Editorial learning tutorials, technology news, health insights, geopolitics analysis, sports coverage, and family-friendly travel guides."
+        canonicalUrl="/"
+        ogType="website"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            name: 'EveryGyan',
+            url: SITE_URL,
+            description: 'Knowledge for Everyone, Everywhere',
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: `${SITE_URL}/search?q={search_term_string}`,
+              'query-input': 'required name=search_term_string',
+            },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'NewsMediaOrganization',
+            name: 'EveryGyan',
+            url: SITE_URL,
+            logo: `${SITE_URL}/favicon.svg`,
+            slogan: 'Knowledge for Everyone, Everywhere',
+          },
+        ]}
+      />
+
       {/* Top Hero Grid: Lead Story + Latest News Column */}
       <section aria-label="Lead Story and Latest News">
         {loading ? (
