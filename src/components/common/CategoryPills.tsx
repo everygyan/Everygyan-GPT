@@ -29,7 +29,7 @@ export const CategoryPills: React.FC<CategoryPillsProps> = ({ activeCategory }) 
               key={cat.id}
               to={`/category/${cat.slug}`}
               className={`flex flex-col items-center group min-w-[72px] sm:min-w-[84px] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-xl p-2 transition-all duration-200 ${
-                isActive ? 'scale-105' : 'hover:-translate-y-0.5'
+                isActive ? 'scale-105' : 'motion-safe:hover:-translate-y-0.5 motion-reduce:transform-none'
               }`}
             >
               <div

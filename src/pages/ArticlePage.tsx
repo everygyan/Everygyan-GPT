@@ -215,6 +215,8 @@ export const ArticlePage: React.FC = () => {
           <img
             src={article.cover_image}
             alt={article.title}
+            {...({ fetchpriority: 'high' } as React.ImgHTMLAttributes<HTMLImageElement>)}
+            decoding="async"
             className="w-full h-full object-cover"
           />
         </div>

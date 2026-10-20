@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Lock, Mail, User as UserIcon, ShieldAlert, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -22,6 +22,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [successMessage, setSuccessMessage] = useState('');
 
   const { signIn, signUp, resetPassword } = useAuth();
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = 'unset';
+      };
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -76,7 +94,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+          className="absolute top-4 right-4 min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />

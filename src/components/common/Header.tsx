@@ -112,18 +112,18 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex sm:hidden items-center gap-2">
+          {/* Mobile Menu Button with Accessible 44x44px Touch Target */}
+          <div className="flex sm:hidden items-center gap-1">
             <button
               onClick={onOpenSearch}
-              className="p-2 text-slate-300 hover:text-white rounded-md"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-300 hover:text-white rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               aria-label="Search"
             >
               <Search className="w-5 h-5" />
             </button>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-md"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-800 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
               aria-label={mobileMenuOpen ? 'Close Menu' : 'Open Menu'}
               aria-expanded={mobileMenuOpen}
             >

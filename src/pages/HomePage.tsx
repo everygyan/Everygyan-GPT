@@ -74,6 +74,9 @@ export const HomePage: React.FC = () => {
         ]}
       />
 
+      {/* Visually hidden H1 for screen reader heading hierarchy */}
+      <h1 className="sr-only">EveryGyan — Knowledge for Everyone, Everywhere</h1>
+
       {/* Top Hero Grid: Lead Story + Latest News Column */}
       <section aria-label="Lead Story and Latest News">
         {loading ? (

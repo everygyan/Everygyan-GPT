@@ -30,7 +30,9 @@ export const NewsletterBanner: React.FC = () => {
       {/* Background Scenic Mountain Landscape with Gradient Tint */}
       <img
         src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=80"
-        alt="Mountain landscape"
+        alt="Scenic mountain landscape banner"
+        loading="lazy"
+        decoding="async"
         className="absolute inset-0 w-full h-full object-cover"
       />
       <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]" />
@@ -68,6 +70,7 @@ export const NewsletterBanner: React.FC = () => {
                   placeholder="Enter your email address"
                   className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 shadow-md border-0"
                   aria-label="Email address for newsletter"
+                  aria-describedby={errorMessage ? 'newsletter-banner-error' : undefined}
                   required
                 />
               </div>
@@ -83,7 +86,7 @@ export const NewsletterBanner: React.FC = () => {
           )}
 
           {errorMessage && (
-            <div className="mt-2.5 flex items-center gap-1.5 text-xs text-red-300">
+            <div id="newsletter-banner-error" role="alert" className="mt-2.5 flex items-center gap-1.5 text-xs text-red-300">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>{errorMessage}</span>
             </div>
@@ -101,7 +104,7 @@ export const NewsletterBanner: React.FC = () => {
           <p className="font-serif italic text-xl lg:text-2xl text-red-400 font-bold mt-1">
             Stay inspired!
           </p>
-          <span className="text-2xl mt-2 animate-bounce">✈</span>
+          <span className="text-2xl mt-2 motion-safe:animate-bounce" aria-hidden="true">✈</span>
         </div>
       </div>
     </section>

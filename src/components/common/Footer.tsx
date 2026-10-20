@@ -108,7 +108,7 @@ export const Footer: React.FC = () => {
                 href="https://youtube.com"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label="YouTube"
               >
                 <Youtube className="w-4 h-4" />
@@ -117,7 +117,7 @@ export const Footer: React.FC = () => {
                 href="https://twitter.com"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label="X (Twitter)"
               >
                 <Twitter className="w-4 h-4" />
@@ -126,7 +126,7 @@ export const Footer: React.FC = () => {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label="LinkedIn"
               >
                 <Linkedin className="w-4 h-4" />
@@ -135,7 +135,7 @@ export const Footer: React.FC = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label="Facebook"
               >
                 <Facebook className="w-4 h-4" />
@@ -144,7 +144,7 @@ export const Footer: React.FC = () => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 bg-slate-800 hover:bg-red-600 hover:text-white rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                 aria-label="Instagram"
               >
                 <Instagram className="w-4 h-4" />

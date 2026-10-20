@@ -18,7 +18,8 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({ article }) => {
           src={article.cover_image}
           alt={article.title}
           loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          decoding="async"
+          className="w-full h-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
         />
         {/* Category Pill Tag Overlay */}
         <div className="absolute top-3 left-3">

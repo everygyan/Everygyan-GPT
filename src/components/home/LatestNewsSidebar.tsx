@@ -37,7 +37,8 @@ export const LatestNewsSidebar: React.FC<LatestNewsSidebarProps> = ({ articles }
                 src={item.cover_image}
                 alt={item.title}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                decoding="async"
+                className="w-full h-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
               />
             </Link>
 

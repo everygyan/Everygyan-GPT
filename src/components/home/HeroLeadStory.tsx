@@ -30,11 +30,13 @@ export const HeroLeadStory: React.FC<HeroLeadStoryProps> = ({ articles }) => {
 
   return (
     <div className="relative group rounded-2xl overflow-hidden shadow-lg aspect-[16/11] sm:aspect-[16/10] lg:aspect-[16/11] bg-slate-900 text-white flex flex-col justify-end">
-      {/* Background Image with smooth fade transition */}
+      {/* Background Image with smooth fade transition & fast high-priority loading */}
       <img
         src={currentArticle.cover_image}
         alt={currentArticle.title}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+        {...({ fetchpriority: 'high' } as React.ImgHTMLAttributes<HTMLImageElement>)}
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 motion-safe:group-hover:scale-105 motion-reduce:transform-none"
       />
 
       {/* Dark Gradient Overlay for Maximum Readability */}

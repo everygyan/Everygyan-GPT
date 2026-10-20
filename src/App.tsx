@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -20,13 +20,22 @@ import { NewsletterConfirmPage } from './pages/NewsletterConfirmPage';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
-import { DashboardHome } from './pages/dashboard/DashboardHome';
-import { DashboardArticles } from './pages/dashboard/DashboardArticles';
-import { ArticleEditor } from './pages/dashboard/ArticleEditor';
-import { DashboardComments } from './pages/dashboard/DashboardComments';
-import { DashboardSubscribers } from './pages/dashboard/DashboardSubscribers';
-import { DashboardNewsletter } from './pages/dashboard/DashboardNewsletter';
-import { DashboardSettings } from './pages/dashboard/DashboardSettings';
+
+// Code-split dashboard routes so anonymous visitors never download internal CMS chunks
+const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome').then((m) => ({ default: m.DashboardHome })));
+const DashboardArticles = lazy(() => import('./pages/dashboard/DashboardArticles').then((m) => ({ default: m.DashboardArticles })));
+const ArticleEditor = lazy(() => import('./pages/dashboard/ArticleEditor').then((m) => ({ default: m.ArticleEditor })));
+const DashboardComments = lazy(() => import('./pages/dashboard/DashboardComments').then((m) => ({ default: m.DashboardComments })));
+const DashboardSubscribers = lazy(() => import('./pages/dashboard/DashboardSubscribers').then((m) => ({ default: m.DashboardSubscribers })));
+const DashboardNewsletter = lazy(() => import('./pages/dashboard/DashboardNewsletter').then((m) => ({ default: m.DashboardNewsletter })));
+const DashboardSettings = lazy(() => import('./pages/dashboard/DashboardSettings').then((m) => ({ default: m.DashboardSettings })));
+
+const DashboardLoadingFallback: React.FC = () => (
+  <div className="py-24 flex flex-col items-center justify-center gap-3">
+    <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+    <p className="text-xs text-slate-500 font-medium">Loading editorial workspace...</p>
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -77,76 +86,86 @@ const AppContent: React.FC = () => {
           user={currentUserData || { name: 'Member', role: 'reader', email: '' }}
           onSignOut={signOut}
         >
-          <Routes>
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardHome />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/articles"
-              element={
-                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
-                  <DashboardArticles />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/articles/new"
-              element={
-                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
-                  <ArticleEditor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/articles/:id/edit"
-              element={
-                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
-                  <ArticleEditor />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/comments"
-              element={
-                <ProtectedRoute allowedRoles={['moderator', 'editor', 'admin']}>
-                  <DashboardComments />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/subscribers"
-              element={
-                <ProtectedRoute allowedRoles={['editor', 'admin']}>
-                  <DashboardSubscribers />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/newsletter"
-              element={
-                <ProtectedRoute allowedRoles={['editor', 'admin']}>
-                  <DashboardNewsletter />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/settings"
-              element={
-                <ProtectedRoute>
-                  <DashboardSettings />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+          <Suspense fallback={<DashboardLoadingFallback />}>
+            <Routes>
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardHome />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/articles"
+                element={
+                  <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                    <DashboardArticles />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/articles/new"
+                element={
+                  <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                    <ArticleEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/articles/:id/edit"
+                element={
+                  <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                    <ArticleEditor />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/comments"
+                element={
+                  <ProtectedRoute allowedRoles={['moderator', 'editor', 'admin']}>
+                    <DashboardComments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/subscribers"
+                element={
+                  <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                    <DashboardSubscribers />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/newsletter"
+                element={
+                  <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                    <DashboardNewsletter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/settings"
+                element={
+                  <ProtectedRoute>
+                    <DashboardSettings />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </Suspense>
         </DashboardLayout>
       ) : (
         /* Public Publication Shell */
         <div className="min-h-screen flex flex-col bg-brand-surface text-slate-900 selection:bg-red-500 selection:text-white">
+          {/* Accessible Skip Navigation Link */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2.5 focus:bg-red-600 focus:text-white focus:font-semibold focus:rounded-xl focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-white"
+          >
+            Skip to main content
+          </a>
+
           <Header
             onOpenSearch={() => setSearchOpen(true)}
             onOpenAuth={handleOpenAuth}
@@ -154,7 +173,7 @@ const AppContent: React.FC = () => {
             currentUser={currentUserData}
           />
 
-          <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full outline-none">
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/article/:slug" element={<ArticlePage />} />
