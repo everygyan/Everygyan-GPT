@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
-import { fetchArticlesByCategory } from '../services/articleService';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { fetchArticlesByCategoryPaginated, PaginatedResult } from '../services/articleService';
 import { CATEGORIES } from '../data/seedData';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -10,8 +10,15 @@ import { Article, Category } from '../types';
 
 export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [page, setPage] = useState(1);
   const [category, setCategory] = useState<Category | null>(null);
+  const [paginatedData, setPaginatedData] = useState<PaginatedResult<Article>>({
+    items: [],
+    total: 0,
+    page: 1,
+    pageSize: 6,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,8 +29,8 @@ export const CategoryPage: React.FC = () => {
       try {
         const cat = CATEGORIES.find((c) => c.slug.toLowerCase() === slug.toLowerCase()) || null;
         setCategory(cat);
-        const data = await fetchArticlesByCategory(slug);
-        setArticles(data);
+        const result = await fetchArticlesByCategoryPaginated(slug, page, 6);
+        setPaginatedData(result);
       } catch (err) {
         console.error('[CategoryPage] Failed to load category articles:', err);
       } finally {
@@ -31,7 +38,7 @@ export const CategoryPage: React.FC = () => {
       }
     }
     loadCategoryArticles();
-  }, [slug]);
+  }, [slug, page]);
 
   return (
     <div className="py-6 sm:py-10 space-y-8">
@@ -60,7 +67,7 @@ export const CategoryPage: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-          <span>{articles.length} Published Stories</span>
+          <span>{paginatedData.total} Stories Published</span>
         </div>
       </div>
 
@@ -71,12 +78,39 @@ export const CategoryPage: React.FC = () => {
           <CardSkeleton />
           <CardSkeleton />
         </div>
-      ) : articles.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {articles.map((art) => (
-            <ArticleCard key={art.id} article={art} />
-          ))}
-        </div>
+      ) : paginatedData.items.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {paginatedData.items.map((art) => (
+              <ArticleCard key={art.id} article={art} />
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          {paginatedData.totalPages > 1 && (
+            <div className="pt-8 flex items-center justify-center gap-4">
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span>Previous</span>
+              </button>
+              <span className="text-xs text-slate-500 font-medium">
+                Page {paginatedData.page} of {paginatedData.totalPages}
+              </span>
+              <button
+                disabled={page >= paginatedData.totalPages}
+                onClick={() => setPage((p) => Math.min(paginatedData.totalPages, p + 1))}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+              >
+                <span>Next</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <EmptyState
           title={`No Articles in ${category?.name || slug}`}

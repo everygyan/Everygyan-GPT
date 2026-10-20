@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
+import { fetchArticleBySlug, fetchAllPublicArticles } from './services/articleService';
 
 describe('EveryGyan Visual System & Public Shell Tests', () => {
   it('renders EveryGyan brand mark and official tagline in the header', async () => {
@@ -59,5 +60,32 @@ describe('EveryGyan Visual System & Public Shell Tests', () => {
     expect(screen.getByText(/© 2026 EveryGyan. All rights reserved./i)).toBeInTheDocument();
     const privacyLinks = screen.getAllByRole('link', { name: /Privacy Policy/i });
     expect(privacyLinks.length).toBeGreaterThan(0);
+  });
+});
+
+describe('Public Security & Reader Data Isolation Tests', () => {
+  it('strictly isolates drafts: anonymous readers cannot fetch draft content', async () => {
+    // Attempt to fetch any draft article directly
+    const draftArticle = await fetchArticleBySlug('test-draft-secret-slug');
+    expect(draftArticle).toBeNull();
+  });
+
+  it('fetchAllPublicArticles returns only articles with status === "published"', async () => {
+    const articles = await fetchAllPublicArticles();
+    expect(articles.length).toBeGreaterThan(0);
+    articles.forEach((art) => {
+      expect(art.status).toBe('published');
+    });
+  });
+
+  it('does not leak sensitive user secrets in article author payloads', async () => {
+    const articles = await fetchAllPublicArticles();
+    articles.forEach((art) => {
+      expect(art.author).toBeDefined();
+      const authorRecord = art.author as Record<string, unknown>;
+      expect(authorRecord['password']).toBeUndefined();
+      expect(authorRecord['email']).toBeUndefined();
+      expect(authorRecord['service_role']).toBeUndefined();
+    });
   });
 });

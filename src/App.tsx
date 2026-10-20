@@ -7,6 +7,8 @@ import { AuthModal } from './components/common/AuthModal';
 import { HomePage } from './pages/HomePage';
 import { ArticlePage } from './pages/ArticlePage';
 import { CategoryPage } from './pages/CategoryPage';
+import { TagPage } from './pages/TagPage';
+import { SearchPage } from './pages/SearchPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyPage } from './pages/PrivacyPage';
@@ -89,6 +91,8 @@ const AppContent: React.FC = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/article/:slug" element={<ArticlePage />} />
               <Route path="/category/:slug" element={<CategoryPage />} />
+              <Route path="/tag/:slug" element={<TagPage />} />
+              <Route path="/search" element={<SearchPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />

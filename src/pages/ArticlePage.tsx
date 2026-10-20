@@ -215,6 +215,27 @@ export const ArticlePage: React.FC = () => {
         </div>
       )}
 
+      {/* Article Tags */}
+      {article.tags && article.tags.length > 0 && (
+        <div className="my-8 flex flex-wrap items-center gap-2 pt-4 border-t border-slate-100">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 mr-1">
+            Tags:
+          </span>
+          {article.tags.map((tag) => {
+            const tagSlug = tag.toLowerCase().replace(/\s+/g, '-');
+            return (
+              <Link
+                key={tag}
+                to={`/tag/${tagSlug}`}
+                className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+              >
+                #{tag}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
       {/* Safe Comments Section */}
       <CommentSection articleId={article.id} />
 
