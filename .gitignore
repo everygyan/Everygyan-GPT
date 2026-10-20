@@ -32,6 +32,7 @@ lerna-debug.log*
 
 # Database Dumps, Backups & Local Data
 *.sql
+!supabase/migrations/*.sql
 *.sql.gz
 *.dump
 *.backup
