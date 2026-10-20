@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { Mail, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { subscribeToNewsletter } from '../../services/newsletterService';
 
 export const NewsletterBanner: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes('@') || !email.includes('.')) {
-      setStatus('error');
-      setErrorMessage('Please provide a valid email address.');
-      return;
-    }
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
-    setStatus('loading');
-    setTimeout(() => {
-      setStatus('success');
+    setLoading(true);
+    const res = await subscribeToNewsletter(email, 'homepage_banner');
+    setLoading(false);
+
+    if (res.success) {
+      setSuccessMessage(res.message);
       setEmail('');
-    }, 500);
+    } else {
+      setErrorMessage(res.error || res.message || 'Subscription failed. Please verify your email.');
+    }
   };
 
   return (
@@ -46,10 +50,10 @@ export const NewsletterBanner: React.FC = () => {
             Get the latest articles, updates and travel tips directly in your inbox.
           </p>
 
-          {status === 'success' ? (
-            <div className="p-4 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 flex items-center gap-3 text-sm">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-              <span>Thank you for subscribing! Please check your inbox for confirmation.</span>
+          {successMessage ? (
+            <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 flex items-start gap-3 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <span>{successMessage}</span>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-md mx-auto md:mx-0">
@@ -59,7 +63,7 @@ export const NewsletterBanner: React.FC = () => {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (status === 'error') setStatus('idle');
+                    if (errorMessage) setErrorMessage(null);
                   }}
                   placeholder="Enter your email address"
                   className="w-full px-4 py-3 rounded-xl bg-white text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 shadow-md border-0"
@@ -69,22 +73,23 @@ export const NewsletterBanner: React.FC = () => {
               </div>
               <button
                 type="submit"
-                disabled={status === 'loading'}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-red-400"
+                disabled={loading}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-semibold text-sm rounded-xl transition-all shadow-md flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-red-400 disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {status === 'loading' ? 'Joining...' : 'Subscribe'}
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{loading ? 'Joining...' : 'Subscribe'}</span>
               </button>
             </form>
           )}
 
-          {status === 'error' && (
+          {errorMessage && (
             <div className="mt-2.5 flex items-center gap-1.5 text-xs text-red-300">
               <AlertCircle className="w-3.5 h-3.5" />
               <span>{errorMessage}</span>
             </div>
           )}
           <p className="mt-3 text-[11px] text-slate-400">
-            Zero spam. Unsubscribe anytime with one click.
+            Double opt-in verified. Unsubscribe anytime with one click.
           </p>
         </div>
 

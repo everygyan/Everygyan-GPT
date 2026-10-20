@@ -67,9 +67,45 @@ export interface Comment {
   created_at: string;
 }
 
+export type SubscriptionStatus = 'pending_confirmation' | 'confirmed' | 'unsubscribed';
+
 export interface NewsletterSubscription {
   id: string;
   email: string;
-  status: 'pending_confirmation' | 'confirmed' | 'unsubscribed';
+  status: SubscriptionStatus;
+  unsubscribe_token: string;
+  confirmation_token?: string;
+  confirmed_at?: string;
+  consent_source: string;
+  consent_at: string;
   created_at: string;
+}
+
+export type CampaignStatus = 'draft' | 'scheduled' | 'sending' | 'sent' | 'failed';
+
+export interface NewsletterCampaign {
+  id: string;
+  title: string;
+  subject: string;
+  preheader?: string;
+  content: string;
+  status: CampaignStatus;
+  scheduled_at?: string;
+  sent_at?: string;
+  recipients_count: number;
+  sent_count: number;
+  failed_count: number;
+  idempotency_key?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface NewsletterSendLog {
+  id: string;
+  campaign_id: string;
+  recipient_email: string;
+  status: 'sent' | 'failed' | 'retry';
+  error_message?: string;
+  attempt_number: number;
+  sent_at: string;
 }

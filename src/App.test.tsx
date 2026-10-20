@@ -1,4 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('./services/supabase', () => ({
+  isSupabaseConfigured: false,
+  supabase: {
+    from: vi.fn(),
+    storage: { from: vi.fn() },
+    auth: {
+      getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
+    },
+  },
+}));
+
 import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import { fetchArticleBySlug, fetchAllPublicArticles } from './services/articleService';
