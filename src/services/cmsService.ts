@@ -1,4 +1,4 @@
-import { Article, ArticleStatus, UserRole } from '../types';
+import { Article, ArticleStatus, UserRole, TemplateType } from '../types';
 import { SEED_ARTICLES } from '../data/seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { calculateReadingTime } from '../utils/readingTime';
@@ -25,6 +25,8 @@ export interface SaveArticleInput {
   references?: { title: string; url: string }[];
   is_lead_story?: boolean;
   is_featured?: boolean;
+  template_type?: TemplateType;
+  template_data?: Record<string, unknown>;
 }
 
 export interface CmsResponse<T> {
@@ -222,6 +224,8 @@ export async function saveArticle(
     seo_description: input.seo_description || input.excerpt,
     is_lead_story: Boolean(input.is_lead_story),
     is_featured: Boolean(input.is_featured),
+    template_type: input.template_type || 'standard',
+    template_data: input.template_data || {},
     author_id: user.id,
     updated_at: new Date().toISOString(),
   };

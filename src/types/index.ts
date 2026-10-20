@@ -23,6 +23,68 @@ export interface Category {
 
 export type ArticleStatus = 'draft' | 'in_review' | 'scheduled' | 'published' | 'archived';
 
+export type TemplateType = 'standard' | 'travel' | 'tutorial';
+
+export interface TravelTemplateData {
+  destination?: string;
+  best_time_to_visit?: {
+    season?: string;
+    note?: string;
+    verified_date?: string;
+  };
+  transport?: {
+    arrival?: string;
+    local_transit?: string;
+    tip?: string;
+  };
+  budget_ranges?: {
+    currency?: string;
+    daily_budget?: string;
+    verified_date?: string;
+    notes?: string;
+  };
+  family_accessibility?: {
+    family_friendly?: boolean;
+    accessibility_notes?: string;
+  };
+  itinerary?: Array<{
+    day: string;
+    title: string;
+    activities: string[];
+  }>;
+  maps_links?: Array<{
+    title: string;
+    url: string;
+  }>;
+  safety_caveats?: string;
+}
+
+export interface TutorialStep {
+  step_number: number;
+  title: string;
+  instructions: string;
+  code_snippet?: string;
+  tip?: string;
+}
+
+export interface TutorialTroubleshooting {
+  issue: string;
+  resolution: string;
+}
+
+export interface TutorialTemplateData {
+  version_applicability?: string;
+  difficulty_level?: 'Beginner' | 'Intermediate' | 'Advanced' | string;
+  prerequisites?: string[];
+  learning_objectives?: string[];
+  steps?: TutorialStep[];
+  troubleshooting?: TutorialTroubleshooting[];
+  related_lessons?: Array<{
+    title: string;
+    url_or_slug: string;
+  }>;
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -50,6 +112,8 @@ export interface Article {
   references?: { title: string; url: string }[];
   seo_title?: string;
   seo_description?: string;
+  template_type?: TemplateType;
+  template_data?: TravelTemplateData | TutorialTemplateData | Record<string, unknown>;
 }
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected' | 'spam';

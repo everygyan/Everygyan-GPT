@@ -7,7 +7,9 @@ import { ShareBar } from '../components/article/ShareBar';
 import { CommentSection } from '../components/article/CommentSection';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
-import { Article } from '../types';
+import { TravelGuideTemplate } from '../components/article/TravelGuideTemplate';
+import { TutorialTemplate } from '../components/article/TutorialTemplate';
+import { Article, TravelTemplateData, TutorialTemplateData } from '../types';
 
 export const ArticlePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -222,6 +224,14 @@ export const ArticlePage: React.FC = () => {
           </figcaption>
         )}
       </figure>
+
+      {/* Content Templates (Travel Guide or Learning/Tutorial) */}
+      {article.template_type === 'travel' && (
+        <TravelGuideTemplate data={article.template_data as TravelTemplateData} />
+      )}
+      {article.template_type === 'tutorial' && (
+        <TutorialTemplate data={article.template_data as TutorialTemplateData} />
+      )}
 
       {/* Table of Contents */}
       {article.table_of_contents && article.table_of_contents.length > 0 && (

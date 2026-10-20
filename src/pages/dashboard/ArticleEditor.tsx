@@ -16,10 +16,14 @@ import {
   Globe,
   Plus,
   Trash2,
+  Compass,
+  BookOpen,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { CATEGORIES } from '../../data/seedData';
-import { ArticleStatus } from '../../types';
+import { ArticleStatus, TemplateType, TravelTemplateData, TutorialTemplateData } from '../../types';
+import { TravelGuideTemplate } from '../../components/article/TravelGuideTemplate';
+import { TutorialTemplate } from '../../components/article/TutorialTemplate';
 import {
   fetchArticleForEditing,
   saveArticle,
@@ -56,6 +60,11 @@ export const ArticleEditor: React.FC = () => {
   const [newRefTitle, setNewRefTitle] = useState('');
   const [newRefUrl, setNewRefUrl] = useState('');
 
+  // Template State
+  const [templateType, setTemplateType] = useState<TemplateType>('standard');
+  const [travelData, setTravelData] = useState<TravelTemplateData>({});
+  const [tutorialData, setTutorialData] = useState<TutorialTemplateData>({});
+
   // UI State
   const [isPreview, setIsPreview] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -90,6 +99,15 @@ export const ArticleEditor: React.FC = () => {
         setSeoTitle(article.seo_title || '');
         setSeoDescription(article.seo_description || '');
         setReferences(article.references || []);
+        if (article.template_type) {
+          setTemplateType(article.template_type);
+        }
+        if (article.template_type === 'travel' && article.template_data) {
+          setTravelData(article.template_data as TravelTemplateData);
+        }
+        if (article.template_type === 'tutorial' && article.template_data) {
+          setTutorialData(article.template_data as TutorialTemplateData);
+        }
         if (article.published_at) {
           setScheduledDate(article.published_at.slice(0, 16));
         }
@@ -113,6 +131,13 @@ export const ArticleEditor: React.FC = () => {
     if (selected) {
       setCategory(selected.name);
       setCategorySlug(selected.slug);
+      if (templateType === 'standard') {
+        if (selected.slug === 'travel') {
+          setTemplateType('travel');
+        } else if (selected.slug === 'learning') {
+          setTemplateType('tutorial');
+        }
+      }
     }
   };
 
@@ -185,6 +210,8 @@ export const ArticleEditor: React.FC = () => {
       seo_title: seoTitle,
       seo_description: seoDescription,
       references,
+      template_type: templateType,
+      template_data: templateType === 'travel' ? (travelData as Record<string, unknown>) : templateType === 'tutorial' ? (tutorialData as Record<string, unknown>) : {},
     };
 
     const userAuthor = {
@@ -320,6 +347,11 @@ export const ArticleEditor: React.FC = () => {
               <img src={coverImage} alt={title} className="w-full h-full object-cover" />
             </div>
           )}
+
+          {/* Template Live Preview */}
+          {templateType === 'travel' && <TravelGuideTemplate data={travelData} />}
+          {templateType === 'tutorial' && <TutorialTemplate data={tutorialData} />}
+
           <div className="prose prose-slate max-w-none text-slate-800 space-y-4 pt-4">
             {content.split('\n\n').map((para, i) => (
               <p key={i}>{para}</p>
@@ -384,6 +416,221 @@ export const ArticleEditor: React.FC = () => {
                   className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
+            </div>
+
+            {/* Template Format Selector & Custom Structured Fields */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-5">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                  Content Template & Format
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTemplateType('standard')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      templateType === 'standard'
+                        ? 'border-red-500 bg-red-50/50 text-red-900 shadow-xs ring-1 ring-red-500'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                    }`}
+                  >
+                    <span className="block text-xs font-bold">Standard Editorial</span>
+                    <span className="block text-[11px] text-slate-500 mt-0.5">Classic prose article</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTemplateType('travel')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      templateType === 'travel'
+                        ? 'border-rose-500 bg-rose-50/50 text-rose-900 shadow-xs ring-1 ring-rose-500'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-rose-600" />
+                      <span className="block text-xs font-bold">Travel Guide</span>
+                    </div>
+                    <span className="block text-[11px] text-slate-500 mt-0.5">Destinations & itineraries</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTemplateType('tutorial')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      templateType === 'tutorial'
+                        ? 'border-blue-500 bg-blue-50/50 text-blue-900 shadow-xs ring-1 ring-blue-500'
+                        : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="block text-xs font-bold">Learning / Tutorial</span>
+                    </div>
+                    <span className="block text-[11px] text-slate-500 mt-0.5">SAP & step-by-step guides</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Travel Guide Fields */}
+              {templateType === 'travel' && (
+                <div className="space-y-4 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 text-rose-700 text-xs font-bold uppercase tracking-wider">
+                    <Compass className="w-4 h-4" />
+                    <span>Travel Guide Structured Attributes</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Destination Name</label>
+                      <input
+                        type="text"
+                        value={travelData.destination || ''}
+                        onChange={(e) => setTravelData({ ...travelData, destination: e.target.value })}
+                        placeholder="e.g. Kyoto, Japan or Vienna & Hallstatt"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-rose-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Best Time to Visit (Season)</label>
+                      <input
+                        type="text"
+                        value={travelData.best_time_to_visit?.season || ''}
+                        onChange={(e) =>
+                          setTravelData({
+                            ...travelData,
+                            best_time_to_visit: {
+                              ...travelData.best_time_to_visit,
+                              season: e.target.value,
+                              verified_date: travelData.best_time_to_visit?.verified_date || 'October 2026',
+                            },
+                          })
+                        }
+                        placeholder="e.g. May to September"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-rose-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Arrival / Transit Tip</label>
+                      <input
+                        type="text"
+                        value={travelData.transport?.arrival || ''}
+                        onChange={(e) =>
+                          setTravelData({
+                            ...travelData,
+                            transport: { ...travelData.transport, arrival: e.target.value },
+                          })
+                        }
+                        placeholder="e.g. International flight to VIE or Kansai (KIX)"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-rose-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Estimated Budget Range (with date stamp)</label>
+                      <input
+                        type="text"
+                        value={travelData.budget_ranges?.daily_budget || ''}
+                        onChange={(e) =>
+                          setTravelData({
+                            ...travelData,
+                            budget_ranges: {
+                              ...travelData.budget_ranges,
+                              daily_budget: e.target.value,
+                              verified_date: 'October 2026',
+                            },
+                          })
+                        }
+                        placeholder="e.g. €80 - €150 / day"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-rose-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Safety & Travel Document Caveats</label>
+                    <textarea
+                      value={travelData.safety_caveats || ''}
+                      onChange={(e) => setTravelData({ ...travelData, safety_caveats: e.target.value })}
+                      placeholder="e.g. Verify Schengen passport validity and visa requirements prior to departure..."
+                      rows={2}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-rose-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Tutorial Fields */}
+              {templateType === 'tutorial' && (
+                <div className="space-y-4 pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-2 text-blue-700 text-xs font-bold uppercase tracking-wider">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Learning & Tutorial Structured Attributes</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Version Applicability</label>
+                      <input
+                        type="text"
+                        value={tutorialData.version_applicability || ''}
+                        onChange={(e) => setTutorialData({ ...tutorialData, version_applicability: e.target.value })}
+                        placeholder="e.g. SAP S/4HANA 2023 / Cloud 2402, ABAP RAP"
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">Difficulty Level</label>
+                      <select
+                        value={tutorialData.difficulty_level || 'Beginner'}
+                        onChange={(e) => setTutorialData({ ...tutorialData, difficulty_level: e.target.value })}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Prerequisites (One per line)</label>
+                    <textarea
+                      value={(tutorialData.prerequisites || []).join('\n')}
+                      onChange={(e) =>
+                        setTutorialData({
+                          ...tutorialData,
+                          prerequisites: e.target.value.split('\n').filter((l) => l.trim()),
+                        })
+                      }
+                      placeholder="e.g.&#10;Basic SQL and relational database concepts&#10;Access to SAP BTP trial tenant"
+                      rows={2}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">Learning Objectives (One per line)</label>
+                    <textarea
+                      value={(tutorialData.learning_objectives || []).join('\n')}
+                      onChange={(e) =>
+                        setTutorialData({
+                          ...tutorialData,
+                          learning_objectives: e.target.value.split('\n').filter((l) => l.trim()),
+                        })
+                      }
+                      placeholder="e.g.&#10;Create CDS data definition&#10;Publish OData V4 service binding"
+                      rows={2}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:ring-1 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Markdown Body Editor */}

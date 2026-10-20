@@ -111,6 +111,65 @@ Nestled in the heart of the Bernese Oberland, Interlaken is Europe's premier adv
       { title: 'Austrian National Tourist Office Official Portal', url: 'https://www.austria.info' },
       { title: 'Swiss Federal Railways (SBB) Family Travel Information', url: 'https://www.sbb.ch' },
     ],
+    template_type: 'travel',
+    template_data: {
+      destination: 'Central Europe (Austria, Czech Republic, Switzerland)',
+      best_time_to_visit: {
+        season: 'May to September & December',
+        note: 'Late spring and summer are optimal for alpine lake excursions; December offers world-renowned holiday markets. Always verify local seasonal hours.',
+        verified_date: 'October 2026',
+      },
+      transport: {
+        arrival: 'International flights into Vienna International (VIE) or Zurich Airport (ZRH).',
+        local_transit: 'Integrated Eurail and Swiss Travel Pass (SBB) network with regional cogwheel trains.',
+        tip: 'Book long-distance OBB Railjet and SBB seat reservations at least 2 weeks in advance during summer.',
+      },
+      budget_ranges: {
+        currency: 'EUR / CHF',
+        daily_budget: '€85 - €160 / day',
+        verified_date: 'October 2026',
+        notes: 'Estimated mid-range family daily spend covering regional transit cards, museum family tickets, and local dining.',
+      },
+      family_accessibility: {
+        family_friendly: true,
+        accessibility_notes: 'All major Austrian and Swiss central rail stations provide step-free access, dedicated elevators, and family quiet compartments.',
+      },
+      itinerary: [
+        {
+          day: 'Days 1-2',
+          title: 'Vienna Imperial Parks & Prater',
+          activities: [
+            'Schönbrunn Palace gardens & children pavilion',
+            'Historic Prater Riesenrad giant ferris wheel',
+            'Interactive Haus der Musik sound museum',
+          ],
+        },
+        {
+          day: 'Days 3-4',
+          title: 'Hallstatt Alpine Lakes & Historic Salt Mine',
+          activities: [
+            'Electric boat cruise on mirror-like Lake Hallstatt',
+            'Salzwelten funicular ascent and subterranean wooden miners slide',
+            'Skywalk World Heritage viewpoint',
+          ],
+        },
+        {
+          day: 'Days 5-7',
+          title: 'Interlaken & Bernese Oberland',
+          activities: [
+            'Cogwheel railway to Jungfraujoch Top of Europe',
+            'Lake Brienz scenic historic paddle-steamer',
+            'Family walking trail from First to Bachalpsee',
+          ],
+        },
+      ],
+      maps_links: [
+        { title: 'Austrian National Tourist Office Official Portal', url: 'https://www.austria.info' },
+        { title: 'Swiss Federal Railways (SBB) Family Travel Information', url: 'https://www.sbb.ch' },
+      ],
+      safety_caveats:
+        'Ensure all travel passports have at least 6 months remaining validity before entering the Schengen area. Verify visa eligibility and comprehensive health/trip cancellation coverage before booking.',
+    },
   },
   {
     id: 'art-news-1',
@@ -230,5 +289,73 @@ Nestled in the heart of the Bernese Oberland, Interlaken is Europe's premier adv
     read_time: '8 min read',
     is_lead_story: false,
     is_featured: true,
+    template_type: 'tutorial',
+    template_data: {
+      version_applicability: 'SAP S/4HANA 2023 / Cloud 2402, ABAP RESTful Application Programming Model (RAP)',
+      difficulty_level: 'Intermediate',
+      prerequisites: [
+        'Basic familiarity with relational database schema and SQL syntax',
+        'Active developer tenant or access to SAP BTP Free Tier / SAP S/4HANA Trial System',
+        'Eclipse IDE with ABAP Development Tools (ADT) plugin installed and configured',
+      ],
+      learning_objectives: [
+        'Understand the architectural shift from legacy ERP table queries to CDS views',
+        'Build and activate a Core Data Services (CDS) Data Definition in Eclipse ADT',
+        'Expose CDS views via an OData V4 Service Binding and test live with SAP Fiori Preview',
+      ],
+      steps: [
+        {
+          step_number: 1,
+          title: 'Connect Eclipse ADT to your SAP S/4HANA ABAP Backend',
+          instructions:
+            'Open Eclipse IDE with the ADT plugin installed. Select File > New > ABAP Project. Select your SAP system from SAP Logon or enter the system host details, client (e.g., 100), user, and password.',
+          tip: 'Verify that your user has developer authorization object S_DEVELOP assigned in transaction SU01.',
+        },
+        {
+          step_number: 2,
+          title: 'Create your Core Data Services (CDS) Data Definition',
+          instructions:
+            'In the Project Explorer, expand your development package. Right-click Core Data Services > Data Definitions > New Data Definition. Give it a name such as ZI_FlightDemo and enter a descriptive label.',
+          code_snippet: `@AbapCatalog.sqlViewName: 'ZV_FLIGHT_DEMO'
+@AbapCatalog.compiler.compareFilter: true
+@AccessControl.authorizationCheck: #CHECK
+@EndUserText.label: 'Flight Data Definition'
+define view ZI_FlightDemo as select from sflight {
+  key carrid as CarrierId,
+  key connid as ConnectionId,
+  key fldate as FlightDate,
+  price      as Price,
+  currency   as CurrencyCode,
+  planetype  as PlaneType
+}`,
+          tip: 'Press Ctrl+F3 to activate the CDS view. Review Problems tab to ensure zero syntax warnings.',
+        },
+        {
+          step_number: 3,
+          title: 'Expose as OData V4 Service & Preview in SAP Fiori',
+          instructions:
+            'Right-click your newly activated CDS view > New Business Services > Service Definition. Expose entity ZI_FlightDemo. Next, right-click the Service Definition and select New Service Binding with Binding Type "OData V4 - UI". Click Activate then Publish.',
+          tip: 'Select the exposed entity in the Service Binding and double-click to launch the browser-based Fiori Elements Preview.',
+        },
+      ],
+      troubleshooting: [
+        {
+          issue: 'Package $TMP is not transportable',
+          resolution:
+            'Local package $TMP is restricted to temporary prototyping. For permanent development, assign an approved transportable workbench request with package starting with Z or Y.',
+        },
+        {
+          issue: 'HTTP 403 Forbidden when publishing Service Binding',
+          resolution:
+            'Verify user authorizations in SAP transaction /IWFND/MAINT_SERVICE and ensure your developer profile includes authorization object /IWFND/AUTH.',
+        },
+      ],
+      related_lessons: [
+        {
+          title: 'Introduction to SAP Fiori Elements Floorplans',
+          url_or_slug: 'why-learning-sap-can-boost-your-career',
+        },
+      ],
+    },
   },
 ];

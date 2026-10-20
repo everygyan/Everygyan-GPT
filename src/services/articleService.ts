@@ -51,7 +51,9 @@ export async function fetchAllPublicArticles(): Promise<Article[]> {
           is_lead_story,
           is_featured,
           views_count,
-          author:profiles(id, full_name, avatar_url, role)
+          author:profiles(id, full_name, avatar_url, role),
+          template_type,
+          template_data
         `)
         .eq('status', 'published')
         .order('published_at', { ascending: false });
@@ -118,6 +120,8 @@ export async function fetchArticleBySlug(slug: string): Promise<Article | null> 
           read_time,
           table_of_contents,
           references,
+          template_type,
+          template_data,
           author:profiles(id, full_name, avatar_url, role)
         `)
         .eq('slug', slug)
