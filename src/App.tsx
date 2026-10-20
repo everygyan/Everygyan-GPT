@@ -20,6 +20,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
 import { DashboardArticles } from './pages/dashboard/DashboardArticles';
+import { ArticleEditor } from './pages/dashboard/ArticleEditor';
 import { DashboardComments } from './pages/dashboard/DashboardComments';
 import { DashboardSubscribers } from './pages/dashboard/DashboardSubscribers';
 import { DashboardNewsletter } from './pages/dashboard/DashboardNewsletter';
@@ -88,6 +89,22 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
                   <DashboardArticles />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/articles/new"
+              element={
+                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                  <ArticleEditor />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/articles/:id/edit"
+              element={
+                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                  <ArticleEditor />
                 </ProtectedRoute>
               }
             />

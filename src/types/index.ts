@@ -48,6 +48,8 @@ export interface Article {
   views_count?: number;
   table_of_contents?: { id: string; title: string; level: number }[];
   references?: { title: string; url: string }[];
+  seo_title?: string;
+  seo_description?: string;
 }
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected' | 'spam';
