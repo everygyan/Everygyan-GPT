@@ -373,13 +373,25 @@ export async function fetchSubscribersForAdmin(filter?: {
 
       const { data, error } = await query;
       if (!error && data) {
-        return data as NewsletterSubscription[];
+        let result = data as NewsletterSubscription[];
+        if (filter?.search?.trim()) {
+          const q = filter.search.toLowerCase();
+          result = result.filter((s) => s.email.toLowerCase().includes(q));
+        }
+        return result;
+      }
+      if (error) {
+        console.warn('[NewsletterService] Admin query error:', error.message);
+        return [];
       }
     } catch (err) {
-      console.warn('[NewsletterService] Admin query failed, using local store:', err);
+      console.warn('[NewsletterService] Admin query failed:', err);
+      return [];
     }
+    return [];
   }
 
+  // Local fallback strictly for unconfigured offline local testing
   let list = [...localSubscribersStore];
   if (filter?.status && filter.status !== 'all') {
     list = list.filter((s) => s.status === filter.status);
@@ -422,8 +434,9 @@ export async function fetchCampaigns(): Promise<NewsletterCampaign[]> {
       if (!error && data) {
         return data as NewsletterCampaign[];
       }
+      return [];
     } catch {
-      // fallback
+      return [];
     }
   }
   return [...localCampaignsStore];

@@ -346,12 +346,29 @@ export async function fetchCommentsForModeration(
           totalPages: Math.ceil(total / pageSize) || 1,
         };
       }
+      if (error) {
+        console.warn('[CommentService] Moderation query error:', error.message);
+        return {
+          comments: [],
+          total: 0,
+          page: 1,
+          pageSize,
+          totalPages: 1,
+        };
+      }
     } catch (err) {
-      console.warn('[CommentService] Moderation fetch failed, using local store:', err);
+      console.warn('[CommentService] Moderation fetch failed:', err);
+      return {
+        comments: [],
+        total: 0,
+        page: 1,
+        pageSize,
+        totalPages: 1,
+      };
     }
   }
 
-  // Local fallback
+  // Local fallback strictly for unconfigured offline local testing
   let list = [...localCommentsStore];
   if (filter?.status && filter.status !== 'all') {
     list = list.filter((c) => c.status === filter.status);
