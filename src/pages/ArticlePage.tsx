@@ -237,7 +237,7 @@ export const ArticlePage: React.FC = () => {
       )}
 
       {/* Safe Comments Section */}
-      <CommentSection articleId={article.id} />
+      <CommentSection articleId={article.id} articleTitle={article.title} />
 
       {/* Related Articles Section */}
       {related.length > 0 && (

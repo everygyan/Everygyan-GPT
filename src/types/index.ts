@@ -57,6 +57,8 @@ export type CommentStatus = 'pending' | 'approved' | 'rejected' | 'spam';
 export interface Comment {
   id: string;
   article_id: string;
+  article_title?: string;
+  user_id?: string;
   author_name: string;
   author_email?: string;
   author_avatar?: string;
