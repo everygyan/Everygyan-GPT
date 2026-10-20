@@ -1,0 +1,66 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build and Production Outputs
+dist/
+dist-ssr/
+build/
+out/
+*.local
+
+# Environment Variables & Secrets (CRITICAL: NEVER COMMIT REAL KEYS)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+*service_role*
+*secret*
+*credential*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Database Dumps, Backups & Local Data
+*.sql
+*.sql.gz
+*.dump
+*.backup
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Temporary & Cache Directories
+.cache/
+.parcel-cache/
+.turbo/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+tmp/
+temp/
+
+# OS-Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE & Editor configs
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Antigravity Brain Scratch Files
+**/scratch/
