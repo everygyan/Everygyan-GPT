@@ -5,6 +5,7 @@ export interface UserProfile {
   email: string;
   full_name: string;
   avatar_url?: string;
+  bio?: string;
   role: UserRole;
   created_at: string;
 }

@@ -65,7 +65,6 @@ describe('EveryGyan Visual System & Public Shell Tests', () => {
 
 describe('Public Security & Reader Data Isolation Tests', () => {
   it('strictly isolates drafts: anonymous readers cannot fetch draft content', async () => {
-    // Attempt to fetch any draft article directly
     const draftArticle = await fetchArticleBySlug('test-draft-secret-slug');
     expect(draftArticle).toBeNull();
   });

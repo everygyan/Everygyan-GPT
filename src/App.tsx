@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Header } from './components/common/Header';
 import { Footer } from './components/common/Footer';
 import { SearchModal } from './components/common/SearchModal';
@@ -13,6 +15,7 @@ import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
 import { DashboardHome } from './pages/dashboard/DashboardHome';
@@ -29,11 +32,8 @@ const AppContent: React.FC = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [currentUser, setCurrentUser] = useState<{ name: string; role: string; email: string } | null>({
-    name: 'Sandeep',
-    role: 'author',
-    email: 'sandeep@everygyan.com',
-  });
+
+  const { user, profile, role, signOut } = useAuth();
 
   const handleOpenAuth = (mode: 'login' | 'register' = 'login') => {
     setAuthMode(mode);
@@ -50,6 +50,14 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const currentUserData = user
+    ? {
+        name: profile?.full_name || user.email?.split('@')[0] || 'Member',
+        role: role,
+        email: user.email || '',
+      }
+    : null;
+
   return (
     <>
       {/* Search and Auth Modals */}
@@ -58,22 +66,63 @@ const AppContent: React.FC = () => {
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
         initialMode={authMode}
-        onLoginSuccess={(user) => setCurrentUser(user)}
       />
 
       {isDashboardRoute ? (
-        /* Dedicated Dashboard Shell */
+        /* Protected Editorial Dashboard Shell */
         <DashboardLayout
-          user={currentUser || { name: 'Member', role: 'reader', email: 'user@example.com' }}
-          onSignOut={() => setCurrentUser(null)}
+          user={currentUserData || { name: 'Member', role: 'reader', email: '' }}
+          onSignOut={signOut}
         >
           <Routes>
-            <Route path="/dashboard" element={<DashboardHome />} />
-            <Route path="/dashboard/articles" element={<DashboardArticles />} />
-            <Route path="/dashboard/comments" element={<DashboardComments />} />
-            <Route path="/dashboard/subscribers" element={<DashboardSubscribers />} />
-            <Route path="/dashboard/newsletter" element={<DashboardNewsletter />} />
-            <Route path="/dashboard/settings" element={<DashboardSettings />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardHome />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/articles"
+              element={
+                <ProtectedRoute allowedRoles={['author', 'editor', 'admin']}>
+                  <DashboardArticles />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/comments"
+              element={
+                <ProtectedRoute allowedRoles={['moderator', 'editor', 'admin']}>
+                  <DashboardComments />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/subscribers"
+              element={
+                <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                  <DashboardSubscribers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/newsletter"
+              element={
+                <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                  <DashboardNewsletter />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <ProtectedRoute>
+                  <DashboardSettings />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </DashboardLayout>
       ) : (
@@ -83,7 +132,7 @@ const AppContent: React.FC = () => {
             onOpenSearch={() => setSearchOpen(true)}
             onOpenAuth={handleOpenAuth}
             onOpenSubscribe={handleOpenSubscribe}
-            currentUser={currentUser}
+            currentUser={currentUserData}
           />
 
           <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -97,6 +146,7 @@ const AppContent: React.FC = () => {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
@@ -111,7 +161,9 @@ const AppContent: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 };

@@ -79,13 +79,20 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* User / Login Button */}
             {currentUser ? (
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm text-slate-200 hover:text-white hover:bg-slate-800 rounded-md font-medium transition-colors"
-              >
-                <User className="w-4 h-4 text-red-400" />
-                <span>Dashboard</span>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/dashboard"
+                  className="flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm text-slate-200 hover:text-white hover:bg-slate-800 rounded-md font-medium transition-colors"
+                >
+                  <div className="w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span>{currentUser.name}</span>
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-800 text-red-400 border border-slate-700">
+                    {currentUser.role}
+                  </span>
+                </Link>
+              </div>
             ) : (
               <button
                 onClick={() => onOpenAuth('login')}
