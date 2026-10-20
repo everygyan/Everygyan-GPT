@@ -191,7 +191,7 @@ CREATE TABLE IF NOT EXISTS public.articles (
   views_count integer NOT NULL DEFAULT 0,
   tags text[] NOT NULL DEFAULT '{}',
   table_of_contents jsonb NOT NULL DEFAULT '[]'::jsonb,
-  references jsonb NOT NULL DEFAULT '[]'::jsonb,
+  "references" jsonb NOT NULL DEFAULT '[]'::jsonb,
   seo_title text,
   seo_description text,
   created_at timestamptz NOT NULL DEFAULT now(),
