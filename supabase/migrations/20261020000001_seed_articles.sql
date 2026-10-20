@@ -26,8 +26,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Temporarily bypass profile role trigger during admin seed execution
-ALTER TABLE public.profiles DISABLE TRIGGER IF EXISTS tr_protect_profile_role;
+-- Temporarily drop profile role trigger during admin seed execution
+DROP TRIGGER IF EXISTS tr_protect_profile_role ON public.profiles;
 
 DO $$
 DECLARE
@@ -439,5 +439,9 @@ BEGIN
 
 END $$;
 
--- Re-enable profile role protection trigger
-ALTER TABLE public.profiles ENABLE TRIGGER IF EXISTS tr_protect_profile_role;
+-- Re-create profile role protection trigger
+DROP TRIGGER IF EXISTS tr_protect_profile_role ON public.profiles;
+CREATE TRIGGER tr_protect_profile_role
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_profile_role_protection();
