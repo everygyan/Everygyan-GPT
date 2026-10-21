@@ -47,7 +47,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Mobile Top Header */}
       <div className="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
         <Link to="/" className="text-xl font-bold tracking-tight">
-          every<span className="text-red-500">gyan</span>
+          Every<span className="text-red-500">Gyan</span>
         </Link>
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -69,7 +69,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="p-6 border-b border-slate-800 flex items-center justify-between">
             <Link to="/" className="flex flex-col">
               <span className="text-2xl font-black tracking-tight text-white">
-                every<span className="text-red-500">gyan</span>
+                Every<span className="text-red-500">Gyan</span>
               </span>
               <span className="text-[10px] text-slate-400">Editorial Dashboard</span>
             </Link>

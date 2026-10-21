@@ -253,7 +253,7 @@ export async function subscribeToNewsletter(
   }
 
   const newSub: NewsletterSubscription = {
-    id: `sub-${Date.now()}`,
+    id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     email: cleanEmail,
     status: 'pending_confirmation',
     confirmation_token: confirmationToken,

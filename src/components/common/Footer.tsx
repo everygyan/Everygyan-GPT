@@ -11,7 +11,7 @@ export const Footer: React.FC = () => {
           <div>
             <Link to="/" className="inline-block mb-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded">
               <span className="text-2xl font-extrabold tracking-tight text-white">
-                every<span className="text-red-500">gyan</span>
+                Every<span className="text-red-500">Gyan</span>
               </span>
             </Link>
             <p className="text-sm text-slate-400 mb-4 font-medium">

@@ -47,7 +47,7 @@ export const ResetPasswordPage: React.FC = () => {
         <div className="text-center mb-6">
           <div className="inline-block mb-2">
             <span className="text-2xl font-extrabold tracking-tight text-slate-900">
-              every<span className="text-red-600">gyan</span>
+              Every<span className="text-red-600">Gyan</span>
             </span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Set New Password</h1>

@@ -119,7 +119,7 @@ describe('Newsletter Subsystem & Double Opt-in Tests', () => {
 
   describe('Administrator Subscriber Moderation Actions', () => {
     it('allows admin to manually confirm a pending subscriber by id', async () => {
-      const email = `admin_confirm_test_${Date.now()}@example.com`;
+      const email = `admin_confirm_test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@example.com`;
       await subscribeToNewsletter(email, 'homepage_banner');
 
       const records = await fetchSubscribersForAdmin({ search: email });
@@ -135,7 +135,7 @@ describe('Newsletter Subsystem & Double Opt-in Tests', () => {
     });
 
     it('allows admin to manually unsubscribe a subscriber by id', async () => {
-      const email = `admin_unsub_test_${Date.now()}@example.com`;
+      const email = `admin_unsub_test_${Date.now()}_${Math.random().toString(36).substring(2, 7)}@example.com`;
       await subscribeToNewsletter(email, 'homepage_banner');
 
       const records = await fetchSubscribersForAdmin({ search: email });

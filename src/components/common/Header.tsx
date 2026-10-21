@@ -37,7 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Link to="/" className="group flex flex-col focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-sm">
               <div className="flex items-center gap-1.5">
                 <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white group-hover:text-slate-100 transition-colors">
-                  every<span className="text-red-500">gyan</span>
+                  Every<span className="text-red-500">Gyan</span>
                 </span>
               </div>
               <span className="text-[10px] sm:text-xs text-slate-400 font-medium tracking-wide">
