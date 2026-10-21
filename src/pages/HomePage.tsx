@@ -9,7 +9,7 @@ import { NewsletterBanner } from '../components/common/NewsletterBanner';
 import { HeroSkeleton, SidebarSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import {
-  fetchLeadStory,
+  fetchCarouselArticles,
   fetchLatestNews,
   fetchFeaturedArticles,
 } from '../services/articleService';
@@ -17,7 +17,7 @@ import { Article } from '../types';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
 export const HomePage: React.FC = () => {
-  const [leadStory, setLeadStory] = useState<Article | null>(null);
+  const [carouselArticles, setCarouselArticles] = useState<Article[]>([]);
   const [latestNews, setLatestNews] = useState<Article[]>([]);
   const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +26,12 @@ export const HomePage: React.FC = () => {
     async function loadData() {
       setLoading(true);
       try {
-        const [lead, news, featured] = await Promise.all([
-          fetchLeadStory(),
+        const [carousel, news, featured] = await Promise.all([
+          fetchCarouselArticles(),
           fetchLatestNews(4),
           fetchFeaturedArticles(),
         ]);
-        setLeadStory(lead);
+        setCarouselArticles(carousel);
         setLatestNews(news);
         setFeaturedArticles(featured);
       } catch (err) {
@@ -88,10 +88,10 @@ export const HomePage: React.FC = () => {
               <SidebarSkeleton />
             </div>
           </div>
-        ) : leadStory ? (
+        ) : carouselArticles.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             <div className="lg:col-span-8 flex flex-col">
-              <HeroLeadStory articles={[leadStory]} />
+              <HeroLeadStory articles={carouselArticles} />
             </div>
             <div className="lg:col-span-4 flex flex-col">
               <LatestNewsSidebar articles={latestNews} />

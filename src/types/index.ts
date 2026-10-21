@@ -107,6 +107,7 @@ export interface Article {
   read_time: string;
   is_lead_story?: boolean;
   is_featured?: boolean;
+  is_carousel?: boolean;
   views_count?: number;
   table_of_contents?: { id: string; title: string; level: number }[];
   references?: { title: string; url: string }[];

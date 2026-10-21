@@ -100,6 +100,7 @@ Nestled in the heart of the Bernese Oberland, Interlaken is Europe's premier adv
     read_time: '8 min read',
     is_lead_story: true,
     is_featured: false,
+    is_carousel: true,
     views_count: 2480,
     table_of_contents: [
       { id: '1-vienna-austria', title: '1. Vienna, Austria', level: 2 },
@@ -187,6 +188,7 @@ Nestled in the heart of the Bernese Oberland, Interlaken is Europe's premier adv
     read_time: '5 min read',
     is_lead_story: false,
     is_featured: false,
+    is_carousel: true,
   },
   {
     id: 'art-news-2',
@@ -272,6 +274,7 @@ Nestled in the heart of the Bernese Oberland, Interlaken is Europe's premier adv
     read_time: '7 min read',
     is_lead_story: false,
     is_featured: true,
+    is_carousel: true,
   },
   {
     id: 'art-featured-3',

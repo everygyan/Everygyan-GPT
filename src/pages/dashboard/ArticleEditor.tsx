@@ -54,6 +54,7 @@ export const ArticleEditor: React.FC = () => {
   const [scheduledDate, setScheduledDate] = useState('');
   const [isLeadStory, setIsLeadStory] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [isCarousel, setIsCarousel] = useState(false);
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [references, setReferences] = useState<{ title: string; url: string }[]>([]);
@@ -96,6 +97,7 @@ export const ArticleEditor: React.FC = () => {
         setStatus(article.status);
         setIsLeadStory(Boolean(article.is_lead_story));
         setIsFeatured(Boolean(article.is_featured));
+        setIsCarousel(Boolean(article.is_carousel));
         setSeoTitle(article.seo_title || '');
         setSeoDescription(article.seo_description || '');
         setReferences(article.references || []);
@@ -207,6 +209,7 @@ export const ArticleEditor: React.FC = () => {
       published_at: desiredStatus === 'scheduled' ? scheduledDate : undefined,
       is_lead_story: isLeadStory,
       is_featured: isFeatured,
+      is_carousel: isCarousel,
       seo_title: seoTitle,
       seo_description: seoDescription,
       references,
@@ -817,6 +820,15 @@ export const ArticleEditor: React.FC = () => {
                     className="rounded text-red-600 focus:ring-red-500"
                   />
                   <span className="font-semibold text-slate-700">Display in Featured Articles Grid</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isCarousel}
+                    onChange={(e) => setIsCarousel(e.target.checked)}
+                    className="rounded text-red-600 focus:ring-red-500"
+                  />
+                  <span className="font-semibold text-slate-700">Display in Homepage Carousel</span>
                 </label>
               </div>
             </div>

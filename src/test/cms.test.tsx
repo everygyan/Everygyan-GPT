@@ -16,7 +16,7 @@ import {
   extractTableOfContents,
   uploadArticleCoverImage,
 } from '../services/cmsService';
-import { fetchAllPublicArticles } from '../services/articleService';
+import { fetchAllPublicArticles, fetchCarouselArticles } from '../services/articleService';
 
 describe('CMS Editorial Workflow Tests', () => {
   describe('Slug Generation & Collision Handling', () => {
@@ -196,6 +196,31 @@ Final checklist.
       const publicArticles = await fetchAllPublicArticles();
       const hasNonPublished = publicArticles.some((a) => a.status !== 'published');
       expect(hasNonPublished).toBe(false);
+    });
+  });
+
+  describe('Homepage Carousel Workflow', () => {
+    it('saves and preserves is_carousel flag when editor saves article', async () => {
+      const res = await saveArticle(
+        {
+          title: 'Spectacular Alpine Journey for Families',
+          content: 'Detailed breakdown of alpine rail itineraries and child-friendly mountain lodges.',
+          category: 'Travel',
+          category_slug: 'travel',
+          status: 'published',
+          is_carousel: true,
+        },
+        { id: 'user-editor-1', name: 'Lead Editor', role: 'editor' }
+      );
+
+      expect(res.data).not.toBeNull();
+      expect(res.data?.is_carousel).toBe(true);
+    });
+
+    it('fetchCarouselArticles returns articles eligible for the hero carousel', async () => {
+      const carouselItems = await fetchCarouselArticles();
+      expect(carouselItems.length).toBeGreaterThan(0);
+      expect(carouselItems.every((a) => a.status === 'published')).toBe(true);
     });
   });
 });

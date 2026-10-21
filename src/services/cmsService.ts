@@ -25,6 +25,7 @@ export interface SaveArticleInput {
   references?: { title: string; url: string }[];
   is_lead_story?: boolean;
   is_featured?: boolean;
+  is_carousel?: boolean;
   template_type?: TemplateType;
   template_data?: Record<string, unknown>;
 }
@@ -85,6 +86,7 @@ export async function fetchEditorialArticles(filters?: {
           read_time,
           is_lead_story,
           is_featured,
+          is_carousel,
           views_count,
           author:profiles(id, full_name, avatar_url, role)
         `)
@@ -97,9 +99,50 @@ export async function fetchEditorialArticles(filters?: {
         query = query.eq('category_slug', filters.category);
       }
 
-      const { data, error } = await query;
-      if (!error && data) {
-        return (data as Array<Omit<Article, 'author'> & { author?: { id?: string; full_name?: string; avatar_url?: string; role?: string } | { id?: string; full_name?: string; avatar_url?: string; role?: string }[] }>).map((item) => {
+      let rawData: unknown[] = [];
+      const primaryRes = await query;
+
+      if (!primaryRes.error && primaryRes.data) {
+        rawData = primaryRes.data;
+      } else if (primaryRes.error && primaryRes.error.message && primaryRes.error.message.includes('is_carousel')) {
+        // Graceful fallback if is_carousel column is not yet applied in production DB
+        let fallbackQuery = supabase
+          .from('articles')
+          .select(`
+            id,
+            title,
+            slug,
+            excerpt,
+            content,
+            cover_image,
+            cover_caption,
+            category,
+            category_slug,
+            tags,
+            status,
+            published_at,
+            read_time,
+            is_lead_story,
+            is_featured,
+            views_count,
+            author:profiles(id, full_name, avatar_url, role)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (filters?.status && filters.status !== 'all') {
+          fallbackQuery = fallbackQuery.eq('status', filters.status);
+        }
+        if (filters?.category && filters.category !== 'all') {
+          fallbackQuery = fallbackQuery.eq('category_slug', filters.category);
+        }
+        const fallbackRes = await fallbackQuery;
+        if (!fallbackRes.error && fallbackRes.data) {
+          rawData = fallbackRes.data;
+        }
+      }
+
+      if (rawData.length > 0) {
+        return (rawData as Array<Omit<Article, 'author'> & { author?: { id?: string; full_name?: string; avatar_url?: string; role?: string } | { id?: string; full_name?: string; avatar_url?: string; role?: string }[] }>).map((item) => {
           const authorObj = Array.isArray(item.author) ? item.author[0] : item.author;
           return {
             ...item,
@@ -224,6 +267,7 @@ export async function saveArticle(
     seo_description: input.seo_description || input.excerpt,
     is_lead_story: Boolean(input.is_lead_story),
     is_featured: Boolean(input.is_featured),
+    is_carousel: Boolean(input.is_carousel),
     template_type: input.template_type || 'standard',
     template_data: input.template_data || {},
     author_id: user.id,
@@ -234,12 +278,26 @@ export async function saveArticle(
     try {
       if (input.id) {
         // Update existing article
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('articles')
           .update(articlePayload)
           .eq('id', input.id)
           .select()
           .single();
+
+        if (error && error.message && error.message.includes('is_carousel')) {
+          // Graceful fallback if is_carousel column doesn't exist yet in Supabase
+          const payloadWithoutCarousel = { ...articlePayload };
+          delete (payloadWithoutCarousel as Record<string, unknown>).is_carousel;
+          const retry = await supabase
+            .from('articles')
+            .update(payloadWithoutCarousel)
+            .eq('id', input.id)
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           return { data: null, error: `Database update failed: ${error.message}` };
@@ -247,7 +305,7 @@ export async function saveArticle(
         return { data: data as Article, error: null };
       } else {
         // Create new article
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('articles')
           .insert({
             ...articlePayload,
@@ -255,6 +313,22 @@ export async function saveArticle(
           })
           .select()
           .single();
+
+        if (error && error.message && error.message.includes('is_carousel')) {
+          // Graceful fallback if is_carousel column doesn't exist yet in Supabase
+          const payloadWithoutCarousel = { ...articlePayload };
+          delete (payloadWithoutCarousel as Record<string, unknown>).is_carousel;
+          const retry = await supabase
+            .from('articles')
+            .insert({
+              ...payloadWithoutCarousel,
+              created_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+          data = retry.data;
+          error = retry.error;
+        }
 
         if (error) {
           return { data: null, error: `Database save failed: ${error.message}` };

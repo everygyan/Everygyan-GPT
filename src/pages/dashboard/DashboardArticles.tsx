@@ -250,7 +250,19 @@ export const DashboardArticles: React.FC = () => {
                         )}
                         <div>
                           <p className="font-bold text-slate-900 line-clamp-1 max-w-md">{art.title}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">/{art.slug}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[11px] text-slate-400 font-mono">/{art.slug}</span>
+                            {art.is_carousel && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                                Carousel
+                              </span>
+                            )}
+                            {art.is_lead_story && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">
+                                Lead Story
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </td>

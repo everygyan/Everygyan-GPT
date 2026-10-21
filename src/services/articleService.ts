@@ -32,7 +32,8 @@ function isPubliclyAccessible(article: Article): boolean {
 export async function fetchAllPublicArticles(): Promise<Article[]> {
   if (isSupabaseConfigured) {
     try {
-      const { data, error } = await supabase
+      let rawData: unknown[] = [];
+      const primaryRes = await supabase
         .from('articles')
         .select(`
           id,
@@ -50,6 +51,7 @@ export async function fetchAllPublicArticles(): Promise<Article[]> {
           read_time,
           is_lead_story,
           is_featured,
+          is_carousel,
           views_count,
           author:profiles(id, full_name, avatar_url, role),
           template_type,
@@ -58,9 +60,43 @@ export async function fetchAllPublicArticles(): Promise<Article[]> {
         .eq('status', 'published')
         .order('published_at', { ascending: false });
 
-      if (!error && data && data.length > 0) {
+      if (!primaryRes.error && primaryRes.data) {
+        rawData = primaryRes.data;
+      } else if (primaryRes.error && primaryRes.error.message && primaryRes.error.message.includes('is_carousel')) {
+        // Graceful fallback if is_carousel column is not yet applied in production DB
+        const fallbackRes = await supabase
+          .from('articles')
+          .select(`
+            id,
+            title,
+            slug,
+            excerpt,
+            content,
+            cover_image,
+            cover_caption,
+            category,
+            category_slug,
+            tags,
+            status,
+            published_at,
+            read_time,
+            is_lead_story,
+            is_featured,
+            views_count,
+            author:profiles(id, full_name, avatar_url, role),
+            template_type,
+            template_data
+          `)
+          .eq('status', 'published')
+          .order('published_at', { ascending: false });
+        if (!fallbackRes.error && fallbackRes.data) {
+          rawData = fallbackRes.data;
+        }
+      }
+
+      if (rawData.length > 0) {
         // Map and ensure strict isolation
-        const safeArticles: Article[] = (data as unknown as ArticleDbRow[]).map((item) => {
+        const safeArticles: Article[] = (rawData as unknown as ArticleDbRow[]).map((item) => {
           const authorObj = Array.isArray(item.author) ? item.author[0] : item.author;
           return {
             ...item,
@@ -86,6 +122,35 @@ export async function fetchAllPublicArticles(): Promise<Article[]> {
 export async function fetchLeadStory(): Promise<Article | null> {
   const articles = await fetchAllPublicArticles();
   return articles.find((a) => a.is_lead_story) || articles[0] || null;
+}
+
+/**
+ * Fetches articles for the Homepage Hero Carousel.
+ * Returns articles explicitly marked with is_carousel = true.
+ * If none are explicitly selected, falls back to the lead story + featured articles.
+ */
+export async function fetchCarouselArticles(): Promise<Article[]> {
+  const articles = await fetchAllPublicArticles();
+
+  // 1. Explicitly selected carousel articles
+  const carousel = articles.filter((a) => Boolean(a.is_carousel));
+  if (carousel.length > 0) {
+    return carousel;
+  }
+
+  // 2. Intelligent fallback: lead story + featured articles
+  const lead = articles.find((a) => a.is_lead_story);
+  const featured = articles.filter((a) => a.is_featured && a.id !== lead?.id);
+  const candidates: Article[] = [];
+  if (lead) candidates.push(lead);
+  candidates.push(...featured);
+
+  if (candidates.length > 0) {
+    return candidates.slice(0, 5);
+  }
+
+  // 3. Fallback to first 3 published articles
+  return articles.slice(0, 3);
 }
 
 export async function fetchLatestNews(limit: number = 4): Promise<Article[]> {
