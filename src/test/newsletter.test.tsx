@@ -17,6 +17,8 @@ import {
   sendTestEmail,
   processCampaignBatch,
   fetchSubscribersForAdmin,
+  adminConfirmSubscriber,
+  adminUnsubscribeSubscriber,
 } from '../services/newsletterService';
 
 describe('Newsletter Subsystem & Double Opt-in Tests', () => {
@@ -112,6 +114,46 @@ describe('Newsletter Subsystem & Double Opt-in Tests', () => {
       const res = await unsubscribeFromNewsletter('fake_unsub_token');
       expect(res.success).toBe(false);
       expect(res.error).toContain('Invalid or expired');
+    });
+  });
+
+  describe('Administrator Subscriber Moderation Actions', () => {
+    it('allows admin to manually confirm a pending subscriber by id', async () => {
+      const email = `admin_confirm_test_${Date.now()}@example.com`;
+      await subscribeToNewsletter(email, 'homepage_banner');
+
+      const records = await fetchSubscribersForAdmin({ search: email });
+      expect(records.length).toBe(1);
+      expect(records[0].status).toBe('pending_confirmation');
+
+      const result = await adminConfirmSubscriber(records[0].id);
+      expect(result.success).toBe(true);
+
+      const updated = await fetchSubscribersForAdmin({ search: email });
+      expect(updated[0].status).toBe('confirmed');
+      expect(updated[0].confirmed_at).toBeDefined();
+    });
+
+    it('allows admin to manually unsubscribe a subscriber by id', async () => {
+      const email = `admin_unsub_test_${Date.now()}@example.com`;
+      await subscribeToNewsletter(email, 'homepage_banner');
+
+      const records = await fetchSubscribersForAdmin({ search: email });
+      expect(records.length).toBe(1);
+
+      await adminConfirmSubscriber(records[0].id);
+
+      const result = await adminUnsubscribeSubscriber(records[0].id);
+      expect(result.success).toBe(true);
+
+      const updated = await fetchSubscribersForAdmin({ search: email });
+      expect(updated[0].status).toBe('unsubscribed');
+    });
+
+    it('returns error when admin tries to confirm non-existent subscriber', async () => {
+      const result = await adminConfirmSubscriber('non-existent-sub-id');
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Subscriber not found');
     });
   });
 

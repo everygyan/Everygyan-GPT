@@ -10,7 +10,12 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { NewsletterSubscription, SubscriptionStatus } from '../../types';
-import { fetchSubscribersForAdmin, exportSubscribersCsv } from '../../services/newsletterService';
+import {
+  fetchSubscribersForAdmin,
+  exportSubscribersCsv,
+  adminConfirmSubscriber,
+  adminUnsubscribeSubscriber,
+} from '../../services/newsletterService';
 
 export const DashboardSubscribers: React.FC = () => {
   const [subscribers, setSubscribers] = useState<NewsletterSubscription[]>([]);
@@ -18,6 +23,8 @@ export const DashboardSubscribers: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const loadSubscribers = useCallback(async () => {
     setLoading(true);
@@ -50,6 +57,60 @@ export const DashboardSubscribers: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleConfirmSubscriber = async (sub: NewsletterSubscription) => {
+    setActionLoadingId(sub.id);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const res = await adminConfirmSubscriber(sub.id);
+      if (!res.success) {
+        setErrorMessage(res.error || `Failed to confirm ${sub.email}.`);
+      } else {
+        const confirmedAt = new Date().toISOString();
+        setSuccessMessage(`Successfully confirmed subscriber: ${sub.email}`);
+        setSubscribers((prev) =>
+          prev.map((s) =>
+            s.id === sub.id
+              ? { ...s, status: 'confirmed', confirmed_at: confirmedAt }
+              : s
+          )
+        );
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Unexpected error during confirmation.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleUnsubscribeSubscriber = async (sub: NewsletterSubscription) => {
+    if (!window.confirm(`Are you sure you want to unsubscribe ${sub.email}?`)) {
+      return;
+    }
+    setActionLoadingId(sub.id);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      const res = await adminUnsubscribeSubscriber(sub.id);
+      if (!res.success) {
+        setErrorMessage(res.error || `Failed to unsubscribe ${sub.email}.`);
+      } else {
+        setSuccessMessage(`Successfully unsubscribed: ${sub.email}`);
+        setSubscribers((prev) =>
+          prev.map((s) =>
+            s.id === sub.id
+              ? { ...s, status: 'unsubscribed' }
+              : s
+          )
+        );
+      }
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Unexpected error during unsubscribe.');
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const statusBadge = (status: SubscriptionStatus) => {
@@ -160,9 +221,34 @@ export const DashboardSubscribers: React.FC = () => {
       </div>
 
       {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-          <span>{errorMessage}</span>
+        <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="text-red-500 hover:text-red-800 font-bold ml-2 text-xs cursor-pointer"
+            aria-label="Dismiss error"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMessage}</span>
+          </div>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="text-emerald-600 hover:text-emerald-900 font-bold ml-2 text-xs cursor-pointer"
+            aria-label="Dismiss message"
+          >
+            ✕
+          </button>
         </div>
       )}
 
@@ -221,6 +307,7 @@ export const DashboardSubscribers: React.FC = () => {
                   <th className="px-6 py-3.5">Source</th>
                   <th className="px-6 py-3.5">Consent Date</th>
                   <th className="px-6 py-3.5">Confirmed Date</th>
+                  <th className="px-6 py-3.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -231,6 +318,55 @@ export const DashboardSubscribers: React.FC = () => {
                     <td className="px-6 py-4 text-xs font-mono text-slate-500">{sub.consent_source}</td>
                     <td className="px-6 py-4 text-xs text-slate-500">{formatDate(sub.consent_at)}</td>
                     <td className="px-6 py-4 text-xs text-slate-500">{formatDate(sub.confirmed_at)}</td>
+                    <td className="px-6 py-4 text-right">
+                      {actionLoadingId === sub.id ? (
+                        <div className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" />
+                          <span>Updating...</span>
+                        </div>
+                      ) : sub.status === 'pending_confirmation' ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleConfirmSubscriber(sub)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
+                            title="Manually confirm subscriber"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Confirm</span>
+                          </button>
+                          <button
+                            onClick={() => handleUnsubscribeSubscriber(sub)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Mark as unsubscribed"
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                            <span>Unsubscribe</span>
+                          </button>
+                        </div>
+                      ) : sub.status === 'confirmed' ? (
+                        <div className="flex items-center justify-end">
+                          <button
+                            onClick={() => handleUnsubscribeSubscriber(sub)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Unsubscribe member"
+                          >
+                            <UserX className="w-3.5 h-3.5" />
+                            <span>Unsubscribe</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-end">
+                          <button
+                            onClick={() => handleConfirmSubscriber(sub)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                            title="Re-activate and confirm subscriber"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Re-confirm</span>
+                          </button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

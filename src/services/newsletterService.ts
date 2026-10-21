@@ -421,6 +421,90 @@ export function exportSubscribersCsv(subscribers: NewsletterSubscription[]): str
 }
 
 /**
+ * Manually confirms a subscriber by ID (admin/editor moderation action).
+ */
+export async function adminConfirmSubscriber(
+  subscriberId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!subscriberId) {
+    return { success: false, error: 'Subscriber ID is required.' };
+  }
+
+  const confirmedAt = new Date().toISOString();
+
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .update({
+          status: 'confirmed',
+          confirmed_at: confirmedAt,
+        })
+        .eq('id', subscriberId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to confirm subscriber',
+      };
+    }
+  }
+
+  // In-memory development store fallback
+  const sub = localSubscribersStore.find((s) => s.id === subscriberId);
+  if (!sub) {
+    return { success: false, error: 'Subscriber not found.' };
+  }
+  sub.status = 'confirmed';
+  sub.confirmed_at = confirmedAt;
+  return { success: true };
+}
+
+/**
+ * Manually unsubscribes a subscriber by ID (admin/editor moderation action).
+ */
+export async function adminUnsubscribeSubscriber(
+  subscriberId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!subscriberId) {
+    return { success: false, error: 'Subscriber ID is required.' };
+  }
+
+  if (isSupabaseConfigured) {
+    try {
+      const { error } = await supabase
+        .from('newsletter_subscribers')
+        .update({
+          status: 'unsubscribed',
+        })
+        .eq('id', subscriberId);
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to unsubscribe subscriber',
+      };
+    }
+  }
+
+  // In-memory development store fallback
+  const sub = localSubscribersStore.find((s) => s.id === subscriberId);
+  if (!sub) {
+    return { success: false, error: 'Subscriber not found.' };
+  }
+  sub.status = 'unsubscribed';
+  return { success: true };
+}
+
+/**
  * Fetches newsletter campaigns
  */
 export async function fetchCampaigns(): Promise<NewsletterCampaign[]> {
