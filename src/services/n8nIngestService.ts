@@ -161,11 +161,26 @@ export async function processN8nDraftIngest(
     };
   }
 
-  // 6. Category Validation (Must match established publication taxonomy)
+  // 6. Category Validation (Must match established publication taxonomy or legacy aliases)
   const categoryInput = (data.category || '').toLowerCase().trim();
-  const matchedCategory = CATEGORIES.find(
+  let matchedCategory = CATEGORIES.find(
     (c) => c.slug.toLowerCase() === categoryInput || c.name.toLowerCase() === categoryInput
   );
+
+  // Backward-compatible alias mapping
+  if (!matchedCategory) {
+    if (categoryInput === 'tech') {
+      matchedCategory = CATEGORIES.find((c) => c.slug === 'learn-ai');
+    } else if (categoryInput === 'learning') {
+      matchedCategory = CATEGORIES.find((c) => c.slug === 'learn-sap');
+    } else if (categoryInput === 'sports') {
+      matchedCategory = CATEGORIES.find((c) => c.slug === 'news-asia');
+    } else if (categoryInput === 'geopolitics') {
+      matchedCategory = CATEGORIES.find((c) => c.slug === 'news-world');
+    } else if (categoryInput === 'travel') {
+      matchedCategory = CATEGORIES.find((c) => c.slug === 'travel-world');
+    }
+  }
 
   if (!matchedCategory) {
     const validNames = CATEGORIES.map((c) => c.slug).join(', ');

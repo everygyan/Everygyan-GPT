@@ -132,10 +132,10 @@ export async function fetchLeadStory(): Promise<Article | null> {
 export async function fetchCarouselArticles(): Promise<Article[]> {
   const articles = await fetchAllPublicArticles();
 
-  // 1. Explicitly selected carousel articles
+  // 1. Explicitly selected carousel articles (lead story always placed first)
   const carousel = articles.filter((a) => Boolean(a.is_carousel));
   if (carousel.length > 0) {
-    return carousel;
+    return carousel.sort((a, b) => (b.is_lead_story ? 1 : 0) - (a.is_lead_story ? 1 : 0));
   }
 
   // 2. Intelligent fallback: lead story + featured articles
@@ -221,9 +221,28 @@ export async function fetchArticlesByCategoryPaginated(
   pageSize: number = 6
 ): Promise<PaginatedResult<Article>> {
   const all = await fetchAllPublicArticles();
-  const filtered = all.filter(
-    (a) => a.category_slug.toLowerCase() === categorySlug.toLowerCase()
-  );
+  const normalized = categorySlug.toLowerCase().trim();
+
+  const filtered = all.filter((a) => {
+    const aSlug = a.category_slug.toLowerCase();
+    // 1. Exact match
+    if (aSlug === normalized) return true;
+
+    // 2. Parent department match
+    if (normalized === 'travel' && (aSlug.startsWith('travel-') || aSlug === 'health')) return true;
+    if (normalized === 'news' && (aSlug.startsWith('news-') || aSlug === 'latest-news')) return true;
+    if (normalized === 'learn' && aSlug.startsWith('learn-')) return true;
+    if (normalized === 'entertainment' && aSlug.startsWith('entertainment-')) return true;
+
+    // 3. Backward-compatible aliases
+    if (normalized === 'tech' && (aSlug === 'learn-ai' || aSlug === 'deals')) return true;
+    if (normalized === 'learning' && (aSlug === 'learn-sap' || aSlug.startsWith('learn-'))) return true;
+    if (normalized === 'sports' && aSlug === 'news-asia') return true;
+    if (normalized === 'geopolitics' && aSlug === 'news-world') return true;
+
+    return false;
+  });
+
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(Math.max(1, page), totalPages);

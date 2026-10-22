@@ -71,7 +71,34 @@ Every piece of content moves through a strict 5-stage lifecycle. Articles never 
 
 ## 3. Content Templates & Authoring Standards
 
-EveryGyan supports three article template styles: Standard Editorial, Travel Guide, and Technical Tutorial.
+### 3.0 Publication Taxonomy & Category Hierarchy
+
+EveryGyan organizes all editorial content across 4 core departments plus Deals & About Us:
+
+1. **Travel (`/category/travel`):**
+   - **World Travel** (`travel-world`): Round-the-world itineraries, multi-continent expeditions.
+   - **Asia Travel** (`travel-asia`): Temples, tropical beaches, culinary journeys, Shinkansen guides.
+   - **Europe Travel** (`travel-europe`): Historic capitals, alpine rail, family-friendly European guides.
+   - **Americas Travel** (`travel-americas`): National parks, Pacific Coast Highway, Patagonia.
+   - **Health & Wellness** (`health`): Evidence-based wellness, circadian sleep rhythms, longevity.
+2. **News (`/category/news`):**
+   - **Latest News** (`latest-news`): Breaking reports, \$2T clean energy milestones, battery breakthroughs.
+   - **World News** (`news-world`): Geopolitics, climate accords, international shipping corridors.
+   - **Asia News** (`news-asia`): High-speed rail integration, T20 cricket analytics, regional growth.
+   - **Europe News** (`news-europe`): EU AI Act enforcement, cross-border sleeper train revival.
+   - **Americas News** (`news-americas`): NASA Artemis lunar missions, decentralized solar microgrids.
+3. **Learn (`/category/learn`):**
+   - **AI & Modern Tech** (`learn-ai`): Multimodal foundation models, autonomous agents, tool calling.
+   - **SAP Tutorials** (`learn-sap`): SAP S/4HANA, ABAP RAP, CDS views, BTP Event Mesh.
+   - **German Language** (`learn-german`): Der/Die/Das memory rules, workplace German etiquette.
+   - **Learning Updates** (`learn-updates`): Top cloud certifications (AWS/GCP/Azure), React 19 roadmap.
+4. **Entertainment (`/category/entertainment`):**
+   - **Movies** (`entertainment-movies`): Cinema critiques, 70mm & IMAX, sci-fi masterpieces.
+   - **Web Series & TV** (`entertainment-series`): Prestige limited series, international crime thrillers.
+   - **Celebrity News** (`entertainment-celeb-news`): Cannes Film Festival, actor method transformations.
+   - **Photos & Visuals** (`entertainment-photos`): Wildlife photography awards, ancient monuments.
+5. **Deals & Gear (`/deals` & `/category/deals`):**
+   - Tested student laptops, noise-canceling headphones, universal GaN chargers, and tech courses.
 
 ### 3.1 Standard Editorial Article
 Used for Technology, Health, Geopolitics, and Sports reporting.

@@ -19,6 +19,7 @@ export interface Category {
   color: string;
   badgeBg: string;
   badgeText: string;
+  parent?: string;
 }
 
 export type ArticleStatus = 'draft' | 'in_review' | 'scheduled' | 'published' | 'archived';

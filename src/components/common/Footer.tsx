@@ -63,33 +63,33 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/category/tech" className="text-slate-400 hover:text-white transition-colors">
-                  Tech
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/health" className="text-slate-400 hover:text-white transition-colors">
-                  Health
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/geopolitics" className="text-slate-400 hover:text-white transition-colors">
-                  Geopolitics
-                </Link>
-              </li>
-              <li>
-                <Link to="/category/sports" className="text-slate-400 hover:text-white transition-colors">
-                  Sports
-                </Link>
-              </li>
-              <li>
                 <Link to="/category/travel" className="text-slate-400 hover:text-white transition-colors">
                   Travel
                 </Link>
               </li>
               <li>
-                <Link to="/category/learning" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/category/news" className="text-slate-400 hover:text-white transition-colors">
+                  News
+                </Link>
+              </li>
+              <li>
+                <Link to="/category/learn" className="text-slate-400 hover:text-white transition-colors">
                   Learning
+                </Link>
+              </li>
+              <li>
+                <Link to="/category/entertainment" className="text-slate-400 hover:text-white transition-colors">
+                  Entertainment
+                </Link>
+              </li>
+              <li>
+                <Link to="/deals" className="text-slate-400 hover:text-white transition-colors">
+                  Deals & Gear
+                </Link>
+              </li>
+              <li>
+                <Link to="/category/health" className="text-slate-400 hover:text-white transition-colors">
+                  Health & Wellness
                 </Link>
               </li>
             </ul>

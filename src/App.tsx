@@ -12,6 +12,7 @@ import { CategoryPage } from './pages/CategoryPage';
 import { TagPage } from './pages/TagPage';
 import { SearchPage } from './pages/SearchPage';
 import { AboutPage } from './pages/AboutPage';
+import { DealsPage } from './pages/DealsPage';
 import { ContactPage } from './pages/ContactPage';
 import { PrivacyPage } from './pages/PrivacyPage';
 import { TermsPage } from './pages/TermsPage';
@@ -181,6 +182,7 @@ const AppContent: React.FC = () => {
               <Route path="/tag/:slug" element={<TagPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/deals" element={<DealsPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />

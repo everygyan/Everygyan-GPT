@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Cpu, Heart, Globe, Trophy, Compass, BookOpen } from 'lucide-react';
+import { Cpu, Heart, Globe, Trophy, Compass, BookOpen, Film, Tv, Star, Camera, Tag, Sparkles } from 'lucide-react';
 import { CATEGORIES } from '../../data/seedData';
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -10,6 +10,12 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Trophy,
   Compass,
   BookOpen,
+  Film,
+  Tv,
+  Star,
+  Camera,
+  Tag,
+  Sparkles,
 };
 
 interface CategoryPillsProps {

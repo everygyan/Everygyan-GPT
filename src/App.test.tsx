@@ -27,12 +27,18 @@ describe('EveryGyan Visual System & Public Shell Tests', () => {
 
   it('renders primary public navigation links', async () => {
     render(<App />);
-    const navNews = screen.getAllByRole('link', { name: /Latest News/i });
-    expect(navNews.length).toBeGreaterThan(0);
-    const navLearning = screen.getAllByRole('link', { name: /Learning/i });
-    expect(navLearning.length).toBeGreaterThan(0);
+    const navAbout = screen.getAllByRole('link', { name: /About us/i });
+    expect(navAbout.length).toBeGreaterThan(0);
     const navTravel = screen.getAllByRole('link', { name: /Travel/i });
     expect(navTravel.length).toBeGreaterThan(0);
+    const navNews = screen.getAllByRole('link', { name: /News/i });
+    expect(navNews.length).toBeGreaterThan(0);
+    const navLearn = screen.getAllByRole('link', { name: /Learn/i });
+    expect(navLearn.length).toBeGreaterThan(0);
+    const navEntertainment = screen.getAllByRole('link', { name: /Entertainment/i });
+    expect(navEntertainment.length).toBeGreaterThan(0);
+    const navDeals = screen.getAllByRole('link', { name: /Deals/i });
+    expect(navDeals.length).toBeGreaterThan(0);
   });
 
   it('renders the prominent lead story and Latest News section', async () => {
@@ -45,10 +51,10 @@ describe('EveryGyan Visual System & Public Shell Tests', () => {
   it('renders category pill options', async () => {
     render(<App />);
     await waitFor(() => {
-      const techElements = screen.getAllByText('Tech');
-      expect(techElements.length).toBeGreaterThan(0);
+      const travelElements = screen.getAllByText(/World Travel|Europe Travel/i);
+      expect(travelElements.length).toBeGreaterThan(0);
     });
-    const healthElements = screen.getAllByText('Health');
+    const healthElements = screen.getAllByText(/Health/i);
     expect(healthElements.length).toBeGreaterThan(0);
   });
 

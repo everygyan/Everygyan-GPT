@@ -134,9 +134,9 @@ export const ArticleEditor: React.FC = () => {
       setCategory(selected.name);
       setCategorySlug(selected.slug);
       if (templateType === 'standard') {
-        if (selected.slug === 'travel') {
+        if (selected.slug.includes('travel')) {
           setTemplateType('travel');
-        } else if (selected.slug === 'learning') {
+        } else if (selected.slug.includes('learn') || selected.slug.includes('sap')) {
           setTemplateType('tutorial');
         }
       }

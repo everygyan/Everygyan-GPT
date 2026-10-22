@@ -117,14 +117,22 @@ When setting up a new Supabase environment (e.g. Staging or Production), execute
 
 5. 20261020000004_n8n_draft_audit.sql
    └── Creates audit_logs table for webhook idempotency and ingestion tracking.
+
+6. 20261021000000_add_carousel_flag.sql
+   └── Adds is_carousel boolean column to articles for homepage hero carousel selection.
+
+7. 20261022000000_seed_new_taxonomy_and_articles.sql
+   └── Seeds the comprehensive 19-subcategory taxonomy and 38 published articles into public.categories and public.articles.
 ```
 
 ### 3.2 Rollback Scripts (Reverse Order)
 If an update must be reverted, execute the matching rollback scripts in reverse order:
-1. `20261020000004_n8n_draft_audit_rollback.sql`
-2. `20261020000003_content_templates_rollback.sql`
-3. `20261020000002_newsletter_subsystem_rollback.sql`
-4. `20261020000000_schema_and_rls_rollback.sql` *(Drops custom tables; auth.users is preserved)*
+1. `20261022000000_seed_new_taxonomy_and_articles_rollback.sql`
+2. `20261021000000_add_carousel_flag_rollback.sql`
+3. `20261020000004_n8n_draft_audit_rollback.sql`
+4. `20261020000003_content_templates_rollback.sql`
+5. `20261020000002_newsletter_subsystem_rollback.sql`
+6. `20261020000000_schema_and_rls_rollback.sql` *(Drops custom tables; auth.users is preserved)*
 
 ---
 

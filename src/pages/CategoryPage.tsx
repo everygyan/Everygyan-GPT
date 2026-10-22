@@ -28,7 +28,65 @@ export const CategoryPage: React.FC = () => {
       setLoading(true);
       window.scrollTo(0, 0);
       try {
-        const cat = CATEGORIES.find((c) => c.slug.toLowerCase() === slug.toLowerCase()) || null;
+        const normalizedSlug = slug.toLowerCase();
+        let cat = CATEGORIES.find((c) => c.slug.toLowerCase() === normalizedSlug) || null;
+
+        if (!cat) {
+          if (normalizedSlug === 'travel') {
+            cat = {
+              id: 'cat-parent-travel',
+              name: 'Travel & Expeditions',
+              slug: 'travel',
+              description: 'Family-friendly itineraries, worldwide wonders, regional guides, and rejuvenating wellness retreats.',
+              icon: 'Compass',
+              color: '#e11d48',
+              badgeBg: 'bg-rose-50',
+              badgeText: 'text-rose-700',
+            };
+          } else if (normalizedSlug === 'news') {
+            cat = {
+              id: 'cat-parent-news',
+              name: 'World & Regional News',
+              slug: 'news',
+              description: 'Fact-checked international coverage, breaking developments, trade routes, and continent-wide affairs.',
+              icon: 'Globe',
+              color: '#dc2626',
+              badgeBg: 'bg-red-50',
+              badgeText: 'text-red-700',
+            };
+          } else if (normalizedSlug === 'learn') {
+            cat = {
+              id: 'cat-parent-learn',
+              name: 'Learning & Enterprise Tech',
+              slug: 'learn',
+              description: 'Practical SAP S/4HANA workflows, multimodal AI engineering, German language mastery, and career certifications.',
+              icon: 'BookOpen',
+              color: '#7c3aed',
+              badgeBg: 'bg-purple-50',
+              badgeText: 'text-purple-700',
+            };
+          } else if (normalizedSlug === 'entertainment') {
+            cat = {
+              id: 'cat-parent-entertainment',
+              name: 'Entertainment & Culture',
+              slug: 'entertainment',
+              description: 'Cinema masterclasses, limited streaming series reviews, red carpet celebrity news, and visual photography.',
+              icon: 'Film',
+              color: '#db2777',
+              badgeBg: 'bg-pink-50',
+              badgeText: 'text-pink-700',
+            };
+          } else if (normalizedSlug === 'tech') {
+            cat = CATEGORIES.find((c) => c.slug === 'learn-ai') || null;
+          } else if (normalizedSlug === 'learning') {
+            cat = CATEGORIES.find((c) => c.slug === 'learn-sap') || null;
+          } else if (normalizedSlug === 'sports') {
+            cat = CATEGORIES.find((c) => c.slug === 'news-asia') || null;
+          } else if (normalizedSlug === 'geopolitics') {
+            cat = CATEGORIES.find((c) => c.slug === 'news-world') || null;
+          }
+        }
+
         setCategory(cat);
         const result = await fetchArticlesByCategoryPaginated(slug, page, 6);
         setPaginatedData(result);
