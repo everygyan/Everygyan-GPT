@@ -123,11 +123,15 @@ When setting up a new Supabase environment (e.g. Staging or Production), execute
 
 7. 20261022000000_seed_new_taxonomy_and_articles.sql
    └── Seeds the comprehensive 19-subcategory taxonomy and 38 published articles into public.categories and public.articles.
+
+8. 20261022010000_contact_messages.sql
+   └── Creates contact_messages table for public reader inquiries with strict RLS (public INSERT only; editor/admin SELECT/UPDATE/DELETE).
 ```
 
 ### 3.2 Rollback Scripts (Reverse Order)
 If an update must be reverted, execute the matching rollback scripts in reverse order:
-1. `20261022000000_seed_new_taxonomy_and_articles_rollback.sql`
+1. `20261022010000_contact_messages_rollback.sql`
+2. `20261022000000_seed_new_taxonomy_and_articles_rollback.sql`
 2. `20261021000000_add_carousel_flag_rollback.sql`
 3. `20261020000004_n8n_draft_audit_rollback.sql`
 4. `20261020000003_content_templates_rollback.sql`

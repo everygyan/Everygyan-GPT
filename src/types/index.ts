@@ -175,3 +175,17 @@ export interface NewsletterSendLog {
   attempt_number: number;
   sent_at: string;
 }
+
+export type MessageStatus = 'unread' | 'read' | 'replied' | 'archived';
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: MessageStatus;
+  admin_notes?: string;
+  replied_at?: string;
+  created_at: string;
+}

@@ -14,6 +14,7 @@
 5. [Reviewing n8n AI-Generated Drafts](#5-reviewing-n8n-ai-generated-drafts)
 6. [Comments Moderation & Spam Handling](#6-comments-moderation--spam-handling)
 7. [Newsletter Issue Authoring & Campaign Dispatch](#7-newsletter-issue-authoring--campaign-dispatch)
+8. [Contact Inquiries & Reader Support](#8-contact-inquiries--reader-support)
 
 ---
 
@@ -258,6 +259,28 @@ Before scheduling or sending a campaign to the live audience:
    - Subscribers in `pending_confirmation` or `unsubscribed` are **strictly excluded**.
 3. **Hostinger Limits:** Hostinger Business mail accounts enforce an hourly threshold (typically 200–500 emails/hour). If your audience exceeds 200 subscribers, space campaign batches across multiple hours.
 4. The campaign status will update from `draft` &rarr; `sending` &rarr; `sent` (or `partial_failure` if transport errors occur).
+
+---
+
+## 8. Contact Inquiries & Reader Support
+
+Reader inquiries submitted through the public Contact page (`/contact`) land in the editorial inbox at `/dashboard/messages`.
+
+### 8.1 Inquiries Workflow
+1. Log in with an `editor` or `admin` account.
+2. Select **Messages** from the dashboard navigation.
+3. Review messages categorized by tabs: **All**, **Unread**, **Read**, **Replied**, and **Archived**.
+4. Click on any inquiry row to view the full sender message and metadata.
+
+### 8.2 Replying to Inquiries
+1. In the inquiry modal or row actions, click **Reply via Email**.
+2. Your local email client (e.g. Gmail, Outlook, Hostinger Webmail) opens automatically with the recipient, subject line (`Re: [Subject] - EveryGyan`), and a professional reply template pre-filled.
+3. The dashboard automatically marks the message status as `replied` and stamps the response time.
+4. You can also manually adjust message status or archive old inquiries.
+
+### 8.3 Privacy & Data Protection
+- Reader contact submissions are confidential. Only authenticated `editor` and `admin` roles can view inquiries via Supabase Row-Level Security.
+- Never disclose reader email addresses, phone numbers, or inquiry contents in public posts or commit them to code.
 
 ---
 

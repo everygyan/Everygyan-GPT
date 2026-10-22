@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, MessageSquare, Users, Send, ArrowRight, PlusCircle, Loader2 } from 'lucide-react';
+import { FileText, MessageSquare, Inbox, Users, Send, ArrowRight, PlusCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase, isSupabaseConfigured } from '../../services/supabase';
 import { fetchEditorialArticles } from '../../services/cmsService';
@@ -11,6 +11,7 @@ export const DashboardHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [articlesCount, setArticlesCount] = useState<number>(0);
   const [commentsCount, setCommentsCount] = useState<number>(0);
+  const [messagesCount, setMessagesCount] = useState<number>(0);
   const [subscribersCount, setSubscribersCount] = useState<number>(0);
   const [campaignsCount, setCampaignsCount] = useState<number>(0);
   const [recentArticles, setRecentArticles] = useState<Article[]>([]);
@@ -21,11 +22,12 @@ export const DashboardHome: React.FC = () => {
       try {
         if (isSupabaseConfigured) {
           // Fetch live counts and live articles concurrently
-          const [artRes, comRes, subRes, campRes, editorialArticles] = await Promise.all([
+          const [artRes, comRes, subRes, campRes, msgRes, editorialArticles] = await Promise.all([
             supabase.from('articles').select('*', { count: 'exact', head: true }),
             supabase.from('comments').select('*', { count: 'exact', head: true }),
             supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
             supabase.from('newsletter_campaigns').select('*', { count: 'exact', head: true }),
+            supabase.from('contact_messages').select('*', { count: 'exact', head: true }),
             fetchEditorialArticles(),
           ]);
 
@@ -33,6 +35,7 @@ export const DashboardHome: React.FC = () => {
           setCommentsCount(comRes.count ?? 0);
           setSubscribersCount(subRes.count ?? 0);
           setCampaignsCount(campRes.count ?? 0);
+          setMessagesCount(msgRes?.count ?? 0);
           setRecentArticles(editorialArticles.slice(0, 5));
         } else {
           const editorialArticles = await fetchEditorialArticles();
@@ -40,6 +43,7 @@ export const DashboardHome: React.FC = () => {
           setCommentsCount(0);
           setSubscribersCount(0);
           setCampaignsCount(0);
+          setMessagesCount(0);
           setRecentArticles(editorialArticles.slice(0, 5));
         }
       } catch (err) {
@@ -72,6 +76,15 @@ export const DashboardHome: React.FC = () => {
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
       link: '/dashboard/comments',
+    },
+    {
+      name: 'Inquiries',
+      value: messagesCount.toString(),
+      change: messagesCount > 0 ? `${messagesCount} reader messages` : '0 inquiries received',
+      icon: Inbox,
+      color: 'text-rose-600',
+      bg: 'bg-rose-50',
+      link: '/dashboard/messages',
     },
     {
       name: 'Subscribers',
@@ -115,7 +128,7 @@ export const DashboardHome: React.FC = () => {
       </div>
 
       {/* KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (

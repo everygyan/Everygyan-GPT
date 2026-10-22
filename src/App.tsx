@@ -27,6 +27,7 @@ const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome').then(
 const DashboardArticles = lazy(() => import('./pages/dashboard/DashboardArticles').then((m) => ({ default: m.DashboardArticles })));
 const ArticleEditor = lazy(() => import('./pages/dashboard/ArticleEditor').then((m) => ({ default: m.ArticleEditor })));
 const DashboardComments = lazy(() => import('./pages/dashboard/DashboardComments').then((m) => ({ default: m.DashboardComments })));
+const DashboardMessages = lazy(() => import('./pages/dashboard/DashboardMessages').then((m) => ({ default: m.DashboardMessages })));
 const DashboardSubscribers = lazy(() => import('./pages/dashboard/DashboardSubscribers').then((m) => ({ default: m.DashboardSubscribers })));
 const DashboardNewsletter = lazy(() => import('./pages/dashboard/DashboardNewsletter').then((m) => ({ default: m.DashboardNewsletter })));
 const DashboardSettings = lazy(() => import('./pages/dashboard/DashboardSettings').then((m) => ({ default: m.DashboardSettings })));
@@ -126,6 +127,14 @@ const AppContent: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={['moderator', 'editor', 'admin']}>
                     <DashboardComments />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/messages"
+                element={
+                  <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                    <DashboardMessages />
                   </ProtectedRoute>
                 }
               />

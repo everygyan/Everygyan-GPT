@@ -1,24 +1,38 @@
 import React, { useState } from 'react';
-import { Send, CheckCircle2 } from 'lucide-react';
+import { Send, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { SeoHead } from '../components/common/SeoHead';
+import { submitContactMessage } from '../services/contactService';
 
 export const ContactPage: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
-    setTimeout(() => {
+    setErrorMessage(null);
+
+    const res = await submitContactMessage({
+      name,
+      email,
+      subject,
+      message,
+    });
+
+    if (res.success) {
       setStatus('success');
       setName('');
       setEmail('');
       setSubject('');
       setMessage('');
-    }, 600);
+    } else {
+      setStatus('error');
+      setErrorMessage(res.error || 'Failed to send your message. Please try again.');
+    }
   };
 
   return (
@@ -48,7 +62,7 @@ export const ContactPage: React.FC = () => {
             </div>
             <h2 className="text-xl font-bold text-slate-900">Message Delivered Successfully</h2>
             <p className="text-sm text-slate-600 max-w-md mx-auto">
-              Thank you for contacting EveryGyan. Our editorial team reviews every message and will respond within 1–2 business days.
+              Thank you for contacting EveryGyan. Our editorial team reviews every message and will respond to your email within 1–2 business days.
             </p>
             <button
               onClick={() => setStatus('idle')}
@@ -59,6 +73,13 @@ export const ContactPage: React.FC = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage && (
+              <div className="p-3.5 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -120,10 +141,19 @@ export const ContactPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full sm:w-auto px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white font-semibold text-sm rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
               >
-                <Send className="w-4 h-4" />
-                <span>{status === 'loading' ? 'Sending...' : 'Send Message'}</span>
+                {status === 'loading' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Delivering Message...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Send Message</span>
+                  </>
+                )}
               </button>
             </div>
           </form>
