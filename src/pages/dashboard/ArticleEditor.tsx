@@ -18,12 +18,15 @@ import {
   Trash2,
   Compass,
   BookOpen,
+  Image as ImageIcon,
+  UploadCloud,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { CATEGORIES } from '../../data/seedData';
 import { ArticleStatus, TemplateType, TravelTemplateData, TutorialTemplateData } from '../../types';
 import { TravelGuideTemplate } from '../../components/article/TravelGuideTemplate';
 import { TutorialTemplate } from '../../components/article/TutorialTemplate';
+import { InlineImageModal } from '../../components/common/InlineImageModal';
 import {
   fetchArticleForEditing,
   saveArticle,
@@ -32,6 +35,8 @@ import {
 } from '../../services/cmsService';
 import { generateSlug } from '../../utils/slug';
 import { calculateReadingTime } from '../../utils/readingTime';
+import { compressImageToWebP, uploadInlineImageToStorage } from '../../utils/imageCompressor';
+import { renderMarkdownBlocks } from '../../utils/markdownRenderer';
 
 export const ArticleEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -75,7 +80,13 @@ export const ArticleEditor: React.FC = () => {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [savedSelection, setSavedSelection] = useState<{ start: number; end: number } | null>(null);
+  const [isDraggingOverEditor, setIsDraggingOverEditor] = useState(false);
+  const [editorToast, setEditorToast] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load existing article if editing
   useEffect(() => {
@@ -184,6 +195,171 @@ export const ArticleEditor: React.FC = () => {
       setAutosaveText('Cover image updated');
     }
     setUploadingImage(false);
+  };
+
+  const insertTextAtCursor = (textToInsert: string, customStart?: number, customEnd?: number) => {
+    const textarea = textareaRef.current;
+    const start = customStart ?? textarea?.selectionStart ?? content.length;
+    const end = customEnd ?? textarea?.selectionEnd ?? content.length;
+
+    const updated = content.substring(0, start) + textToInsert + content.substring(end);
+    setContent(updated);
+
+    if (textarea) {
+      setTimeout(() => {
+        textarea.focus();
+        const newPos = start + textToInsert.length;
+        textarea.setSelectionRange(newPos, newPos);
+      }, 10);
+    }
+  };
+
+  const handleOpenImageModal = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      setSavedSelection({
+        start: textarea.selectionStart,
+        end: textarea.selectionEnd,
+      });
+    } else {
+      setSavedSelection(null);
+    }
+    setIsImageModalOpen(true);
+  };
+
+  const handleInsertImageFromModal = (imageMarkdown: string) => {
+    if (savedSelection) {
+      insertTextAtCursor(imageMarkdown, savedSelection.start, savedSelection.end);
+    } else {
+      insertTextAtCursor(imageMarkdown);
+    }
+    setEditorToast('✓ Inline image added to article');
+    setTimeout(() => setEditorToast(null), 3500);
+  };
+
+  const handleLinkButton = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = content.substring(start, end);
+
+    const url = window.prompt('Enter destination URL (e.g. https://...):', 'https://');
+    if (!url) return;
+
+    const label = selected.trim() || 'Link text';
+    insertTextAtCursor(`[${label}](${url})`, start, end);
+  };
+
+  const handlePasteOnEditor = async (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    let imageFile: File | null = null;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        imageFile = items[i].getAsFile();
+        break;
+      }
+    }
+
+    if (!imageFile) return; // Allow normal text paste
+
+    e.preventDefault();
+
+    const textarea = e.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const placeholder = `\n![Uploading image (${imageFile.name || 'clipboard'})...]()\n`;
+
+    const before = content.substring(0, start);
+    const after = content.substring(end);
+    setContent(before + placeholder + after);
+    setEditorToast('Compressing & uploading pasted image to WebP...');
+
+    try {
+      const compressed = await compressImageToWebP(imageFile, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+      });
+
+      const uploadRes = await uploadInlineImageToStorage(compressed.file, 'article-media', 'inline');
+      if (uploadRes.error) {
+        throw new Error(uploadRes.error);
+      }
+
+      const markdownSnippet = `\n![Image](${uploadRes.url})\n\n`;
+      setContent((prev) => prev.replace(placeholder, markdownSnippet));
+      setEditorToast(`✓ Image pasted and converted to WebP (${Math.round(compressed.compressedSize / 1024)} KB)`);
+      setTimeout(() => setEditorToast(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Paste upload failed';
+      setContent((prev) => prev.replace(placeholder, `\n<!-- Image paste failed: ${msg} -->\n`));
+      setErrorBanner(`Image paste error: ${msg}`);
+      setEditorToast(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      setIsDraggingOverEditor(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    setIsDraggingOverEditor(false);
+  };
+
+  const handleDropOnEditor = async (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    setIsDraggingOverEditor(false);
+
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    const imageFile = Array.from(files).find((f) => f.type.startsWith('image/'));
+    if (!imageFile) return;
+
+    const textarea = e.currentTarget;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const placeholder = `\n![Uploading dropped image (${imageFile.name})...]()\n`;
+
+    const before = content.substring(0, start);
+    const after = content.substring(end);
+    setContent(before + placeholder + after);
+    setEditorToast('Optimizing & uploading dropped image...');
+
+    try {
+      const compressed = await compressImageToWebP(imageFile, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+      });
+
+      const uploadRes = await uploadInlineImageToStorage(compressed.file, 'article-media', 'inline');
+      if (uploadRes.error) {
+        throw new Error(uploadRes.error);
+      }
+
+      const cleanAlt = imageFile.name
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+      const markdownSnippet = `\n![${cleanAlt}](${uploadRes.url})\n\n`;
+      setContent((prev) => prev.replace(placeholder, markdownSnippet));
+      setEditorToast(`✓ Dropped image added (${Math.round(compressed.compressedSize / 1024)} KB WebP)`);
+      setTimeout(() => setEditorToast(null), 4000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Drop upload failed';
+      setContent((prev) => prev.replace(placeholder, `\n<!-- Image drop failed: ${msg} -->\n`));
+      setErrorBanner(`Image drop error: ${msg}`);
+      setEditorToast(null);
+    }
   };
 
   // Save / Publish submit handler
@@ -356,9 +532,7 @@ export const ArticleEditor: React.FC = () => {
           {templateType === 'tutorial' && <TutorialTemplate data={tutorialData} />}
 
           <div className="prose prose-slate max-w-none text-slate-800 space-y-4 pt-4">
-            {content.split('\n\n').map((para, i) => (
-              <p key={i}>{para}</p>
-            ))}
+            {renderMarkdownBlocks(content)}
           </div>
         </div>
       ) : (
@@ -638,10 +812,18 @@ export const ArticleEditor: React.FC = () => {
 
             {/* Markdown Body Editor */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-3">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Article Body (Markdown Supported)
-                </label>
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Article Body (Markdown Supported)
+                  </label>
+                  {editorToast && (
+                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200 flex items-center gap-1 animate-fade-in">
+                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      {editorToast}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 text-xs text-slate-400 font-medium">
                   <span>{content.trim().split(/\s+/).filter(Boolean).length} words</span>
                   <span>•</span>
@@ -650,52 +832,105 @@ export const ArticleEditor: React.FC = () => {
               </div>
 
               {/* Formatting Toolbar */}
-              <div className="flex flex-wrap gap-1.5 pb-2 text-xs text-slate-600">
+              <div className="flex flex-wrap items-center gap-1.5 pb-2 text-xs text-slate-600">
                 <button
                   type="button"
-                  onClick={() => setContent((c) => c + '\n\n## Section Heading\n')}
+                  onClick={() => insertTextAtCursor('\n\n## Section Heading\n')}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded font-bold"
+                  title="Section Heading (H2)"
                 >
                   H2
                 </button>
                 <button
                   type="button"
-                  onClick={() => setContent((c) => c + '\n\n### Sub-heading\n')}
+                  onClick={() => insertTextAtCursor('\n\n### Sub-heading\n')}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded font-bold"
+                  title="Sub-heading (H3)"
                 >
                   H3
                 </button>
                 <button
                   type="button"
-                  onClick={() => setContent((c) => c + ' **bold text** ')}
+                  onClick={() => {
+                    const sel = textareaRef.current ? content.substring(textareaRef.current.selectionStart, textareaRef.current.selectionEnd) : '';
+                    insertTextAtCursor(`**${sel || 'bold text'}**`);
+                  }}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded font-semibold"
+                  title="Bold text"
                 >
                   Bold
                 </button>
                 <button
                   type="button"
-                  onClick={() => setContent((c) => c + '\n\n> Quote or key highlight\n\n')}
+                  onClick={() => insertTextAtCursor('\n\n> Quote or key highlight\n\n')}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded"
+                  title="Blockquote"
                 >
                   Quote
                 </button>
                 <button
                   type="button"
-                  onClick={() => setContent((c) => c + ' [link text](https://example.com) ')}
+                  onClick={handleLinkButton}
                   className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded flex items-center gap-1"
+                  title="Insert Link"
                 >
                   <Link2 className="w-3 h-3" />
                   <span>Link</span>
                 </button>
+
+                <div className="h-4 w-px bg-slate-200 mx-1" />
+
+                {/* Insert Inline Image Button */}
+                <button
+                  type="button"
+                  onClick={handleOpenImageModal}
+                  className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-bold flex items-center gap-1.5 transition-colors shadow-xs"
+                  title="Insert Inline Image (Upload WebP or Link URL)"
+                >
+                  <ImageIcon className="w-3.5 h-3.5 text-red-600" />
+                  <span>Image</span>
+                </button>
               </div>
 
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your article content using standard Markdown (## for headings, - for lists)..."
-                rows={16}
-                className="w-full p-4 font-mono text-sm leading-relaxed border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
+              {/* Textarea with Drag & Drop Overlay */}
+              <div className="relative">
+                {isDraggingOverEditor && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-red-500 bg-red-50/95 backdrop-blur-xs transition-all pointer-events-none">
+                    <UploadCloud className="w-10 h-10 text-red-600 animate-bounce" />
+                    <p className="mt-2 text-sm font-bold text-red-900">
+                      Drop image to insert into article body
+                    </p>
+                    <p className="text-xs text-red-700">
+                      Auto-compressed to WebP &lt; 150KB and uploaded to Supabase Storage
+                    </p>
+                  </div>
+                )}
+
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onPaste={handlePasteOnEditor}
+                  onDrop={handleDropOnEditor}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  placeholder="Write your article content using standard Markdown (## for headings, - for lists)... You can paste screenshots (Ctrl+V) or drop image files directly here!"
+                  rows={16}
+                  className={`w-full p-4 font-mono text-sm leading-relaxed border rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors ${
+                    isDraggingOverEditor ? 'border-red-500 ring-2 ring-red-500/20' : 'border-slate-200'
+                  }`}
+                />
+
+                <div className="flex flex-wrap items-center justify-between text-[11px] text-slate-400 px-1 mt-1.5 gap-2">
+                  <span className="flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-red-500 shrink-0" />
+                    <span>
+                      Tip: Press <kbd className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-mono text-[10px] border">Ctrl+V</kbd> to paste screenshots directly from clipboard or drag image files onto the editor.
+                    </span>
+                  </span>
+                  <span>{content.length} characters</span>
+                </div>
+              </div>
             </div>
 
             {/* References & Sources Block */}
@@ -949,6 +1184,30 @@ export const ArticleEditor: React.FC = () => {
               )}
             </div>
 
+            {/* Inline Story Images */}
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-red-600" />
+                  <span>Inline Story Images</span>
+                </h3>
+                <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  Auto-WebP
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Add photos, diagrams, or screenshots anywhere in your story. You can also paste screenshots directly into the editor (<kbd className="px-1 py-0.5 bg-slate-100 rounded text-[10px] font-mono border">Ctrl+V</kbd>).
+              </p>
+              <button
+                type="button"
+                onClick={handleOpenImageModal}
+                className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4 text-red-600" />
+                <span>Insert Inline Image...</span>
+              </button>
+            </div>
+
             {/* SEO Metadata */}
             <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-sm space-y-3">
               <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
@@ -979,6 +1238,13 @@ export const ArticleEditor: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Inline Image Modal */}
+      <InlineImageModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onInsert={handleInsertImageFromModal}
+      />
     </div>
   );
 };

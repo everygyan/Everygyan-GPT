@@ -10,6 +10,7 @@ import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 import { TravelGuideTemplate } from '../components/article/TravelGuideTemplate';
 import { TutorialTemplate } from '../components/article/TutorialTemplate';
 import { Article, TravelTemplateData, TutorialTemplateData } from '../types';
+import { renderMarkdownBlocks } from '../utils/markdownRenderer';
 
 export const ArticlePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -242,32 +243,7 @@ export const ArticlePage: React.FC = () => {
 
       {/* Article Body Content */}
       <div className="prose prose-slate max-w-none text-slate-800 leading-relaxed space-y-6 text-base sm:text-lg">
-        {article.content.split('\n\n').map((paragraph, index) => {
-          if (paragraph.startsWith('## ')) {
-            const headingText = paragraph.replace('## ', '').trim();
-            const headingId = headingText
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/(^-|-$)+/g, '');
-            return (
-              <h2
-                key={index}
-                id={headingId}
-                className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight pt-6 pb-2"
-              >
-                {headingText}
-              </h2>
-            );
-          }
-          if (paragraph.trim()) {
-            return (
-              <p key={index} className="text-slate-700 leading-relaxed font-normal">
-                {paragraph.trim()}
-              </p>
-            );
-          }
-          return null;
-        })}
+        {renderMarkdownBlocks(article.content)}
       </div>
 
       {/* References Block */}
