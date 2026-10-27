@@ -1,25 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="eg-navy" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#111827"/>
-      <stop offset="100%" stop-color="#0b1120"/>
+    <linearGradient id="eg-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4338ca" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#818cf8" />
     </linearGradient>
-    <linearGradient id="eg-red" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#f87171"/>
-      <stop offset="100%" stop-color="#dc2626"/>
-    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#312e81" flood-opacity="0.35" />
+    </filter>
   </defs>
 
-  <!-- Dark Navy Squircle Canvas -->
-  <rect width="64" height="64" rx="14" fill="url(#eg-navy)"/>
-  <rect x="1" y="1" width="62" height="62" rx="13" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+  <!-- Background Squircle with Subtle Shadow -->
+  <rect x="32" y="32" width="448" height="448" rx="112" ry="112" fill="url(#eg-grad)" filter="url(#shadow)" />
 
-  <!-- Open Book of Knowledge / Learning (Gyan) -->
-  <path d="M 12 47 C 20 44 26 40 32 42.5 C 38 40 44 44 52 47 L 52 35 C 44 32 38 35.5 32 33 C 26 35.5 20 32 12 35 Z" fill="#ffffff"/>
-  <path d="M 32 33 L 32 42.5" stroke="#0b1120" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Compass Star of Travel & Discovery -->
-  <polygon points="32,10 35.5,21.5 47,25 35.5,28.5 32,40 28.5,28.5 17,25 28.5,21.5" fill="url(#eg-red)"/>
-  <circle cx="32" cy="25" r="3" fill="#ffffff"/>
-  <circle cx="32" cy="25" r="1.5" fill="#dc2626"/>
+  <!-- Inner Sparkles Knowledge Beacon -->
+  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" transform="translate(106, 106) scale(12.5)">
+    <!-- Primary Center Star -->
+    <path d="M12 2.5 C12 7.7 16.3 12 21.5 12 C16.3 12 12 16.3 12 21.5 C12 16.3 7.7 12 2.5 12 C7.7 12 12 7.7 12 2.5 Z" fill="#ffffff" stroke="none" />
+    <!-- Top-Right Sparkle -->
+    <path d="M19 2v4" stroke="#ffffff" stroke-width="2.5" />
+    <path d="M21 4h-4" stroke="#ffffff" stroke-width="2.5" />
+    <!-- Bottom-Left Starlet -->
+    <circle cx="5" cy="19" r="2" fill="#ffffff" stroke="none" />
+  </g>
 </svg>
