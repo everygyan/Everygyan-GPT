@@ -21,6 +21,11 @@ import { NewsletterConfirmPage } from './pages/NewsletterConfirmPage';
 import { UnsubscribePage } from './pages/UnsubscribePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
+import { GermanLanguagePage } from './pages/learn-german/GermanLanguagePage';
+import { LearningHub } from './components/learn-german/LearningHub';
+import { A1Dashboard } from './pages/learn-german/A1Dashboard';
+import { A2Dashboard } from './pages/learn-german/A2Dashboard';
+import { B1Dashboard } from './pages/learn-german/B1Dashboard';
 
 // Code-split dashboard routes so anonymous visitors never download internal CMS chunks
 const DashboardHome = lazy(() => import('./pages/dashboard/DashboardHome').then((m) => ({ default: m.DashboardHome })));
@@ -198,7 +203,14 @@ const AppContent: React.FC = () => {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
-              <Route path="*" element={<NotFoundPage />} />
+              {/* German Language Section */}
+        <Route path="/category/learn-german" element={<GermanLanguagePage />}>
+          <Route index element={<LearningHub />} />
+          <Route path="a1" element={<A1Dashboard />} />
+          <Route path="a2" element={<A2Dashboard />} />
+          <Route path="b1" element={<B1Dashboard />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
 
