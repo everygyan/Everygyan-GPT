@@ -189,3 +189,48 @@ export interface ContactMessage {
   replied_at?: string;
   created_at: string;
 }
+
+export interface AboutPillar {
+  icon: string;
+  color: string;
+  title: string;
+  description: string;
+  bullets: string[];
+}
+
+export interface AboutStandard {
+  title: string;
+  description: string;
+}
+
+export interface AboutPageContent {
+  id?: string;
+  hero_tagline: string;
+  hero_title: string;
+  hero_highlight: string;
+  hero_description: string;
+  story_badge: string;
+  story_title: string;
+  story_paragraphs: string[];
+  pillars: AboutPillar[];
+  standards_badge: string;
+  standards_title: string;
+  standards_items: AboutStandard[];
+  commitment_title: string;
+  commitment_text: string;
+  commitment_email: string;
+  updated_at?: string;
+}
+
+export interface EditorialTeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  avatar: string;
+  specialties: string[];
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+

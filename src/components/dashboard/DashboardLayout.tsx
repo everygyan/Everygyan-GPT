@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Inbox,
   Users,
+  Users2,
   Send,
   Settings,
   ExternalLink,
@@ -36,6 +37,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { name: 'Messages', href: '/dashboard/messages', icon: Inbox },
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: Users },
     { name: 'Newsletter', href: '/dashboard/newsletter', icon: Send },
+    { name: 'About & Team', href: '/dashboard/about', icon: Users2 },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 

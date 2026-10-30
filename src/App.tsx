@@ -35,6 +35,7 @@ const DashboardComments = lazy(() => import('./pages/dashboard/DashboardComments
 const DashboardMessages = lazy(() => import('./pages/dashboard/DashboardMessages').then((m) => ({ default: m.DashboardMessages })));
 const DashboardSubscribers = lazy(() => import('./pages/dashboard/DashboardSubscribers').then((m) => ({ default: m.DashboardSubscribers })));
 const DashboardNewsletter = lazy(() => import('./pages/dashboard/DashboardNewsletter').then((m) => ({ default: m.DashboardNewsletter })));
+const DashboardAbout = lazy(() => import('./pages/dashboard/DashboardAbout').then((m) => ({ default: m.DashboardAbout })));
 const DashboardSettings = lazy(() => import('./pages/dashboard/DashboardSettings').then((m) => ({ default: m.DashboardSettings })));
 
 const DashboardLoadingFallback: React.FC = () => (
@@ -156,6 +157,14 @@ const AppContent: React.FC = () => {
                 element={
                   <ProtectedRoute allowedRoles={['editor', 'admin']}>
                     <DashboardNewsletter />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/about"
+                element={
+                  <ProtectedRoute allowedRoles={['editor', 'admin']}>
+                    <DashboardAbout />
                   </ProtectedRoute>
                 }
               />
