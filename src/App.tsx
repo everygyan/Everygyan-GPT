@@ -192,6 +192,13 @@ const AppContent: React.FC = () => {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/article/:slug" element={<ArticlePage />} />
+              {/* German Language Learning Curriculum Section */}
+              <Route path="/category/learn-german" element={<GermanLanguagePage />}>
+                <Route index element={<LearningHub />} />
+                <Route path="a1" element={<A1Dashboard />} />
+                <Route path="a2" element={<A2Dashboard />} />
+                <Route path="b1" element={<B1Dashboard />} />
+              </Route>
               <Route path="/category/:slug" element={<CategoryPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />
               <Route path="/search" element={<SearchPage />} />
@@ -203,14 +210,7 @@ const AppContent: React.FC = () => {
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/newsletter/confirm" element={<NewsletterConfirmPage />} />
               <Route path="/unsubscribe" element={<UnsubscribePage />} />
-              {/* German Language Section */}
-        <Route path="/category/learn-german" element={<GermanLanguagePage />}>
-          <Route index element={<LearningHub />} />
-          <Route path="a1" element={<A1Dashboard />} />
-          <Route path="a2" element={<A2Dashboard />} />
-          <Route path="b1" element={<B1Dashboard />} />
-        </Route>
-        <Route path="*" element={<NotFoundPage />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>
 
