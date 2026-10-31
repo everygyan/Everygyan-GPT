@@ -7,6 +7,7 @@ import { CATEGORIES } from '../data/seedData';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
+import { ChessCard } from '../components/games/ChessCard';
 import { Article, Category } from '../types';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
@@ -195,6 +196,11 @@ export const CategoryPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Featured Online Games (Prominently displayed on Games page) */}
+      {(slug?.toLowerCase() === 'entertainment-games' || slug?.toLowerCase() === 'games') && (
+        <ChessCard />
+      )}
+
       {/* Articles Grid */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -204,6 +210,13 @@ export const CategoryPage: React.FC = () => {
         </div>
       ) : paginatedData.items.length > 0 ? (
         <>
+          {(slug?.toLowerCase() === 'entertainment-games' || slug?.toLowerCase() === 'games') && (
+            <div className="pt-2">
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight mb-4">
+                Gaming News, Hardware Reviews & Stories
+              </h2>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {paginatedData.items.map((art) => (
               <ArticleCard key={art.id} article={art} />
@@ -235,6 +248,13 @@ export const CategoryPage: React.FC = () => {
             </div>
           )}
         </>
+      ) : (slug?.toLowerCase() === 'entertainment-games' || slug?.toLowerCase() === 'games') ? (
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-center space-y-2">
+          <p className="text-sm font-semibold text-slate-700">More Arcade & Board Games Coming Soon!</p>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Our editorial team is authoring gaming articles, hardware guides, and preparing additional online mini-games. Play Chess above in the meantime!
+          </p>
+        </div>
       ) : (
         <EmptyState
           title={`No Articles in ${category?.name || slug}`}
