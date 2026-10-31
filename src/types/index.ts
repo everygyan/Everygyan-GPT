@@ -234,3 +234,31 @@ export interface EditorialTeamMember {
   updated_at?: string;
 }
 
+export interface NavigationMenuItem {
+  id: string;
+  name: string;
+  type: 'link' | 'dropdown';
+  path: string;
+  description?: string;
+  badge?: string;
+  display_order: number;
+  visible: boolean;
+  parent_id?: string | null;
+  children?: NavigationMenuItem[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface DynamicPage {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  icon: string;
+  color: string;
+  page_type: 'category' | 'custom';
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+

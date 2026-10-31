@@ -200,6 +200,17 @@ export const CATEGORIES: Category[] = [
     "badgeText": "text-emerald-700"
   },
   {
+    "id": "cat-entertainment-games",
+    "name": "Games",
+    "slug": "entertainment-games",
+    "parent": "entertainment",
+    "description": "Mobile, console & PC gaming news, hardware benchmarks, and in-depth reviews.",
+    "icon": "Gamepad2",
+    "color": "#7c3aed",
+    "badgeBg": "bg-purple-50",
+    "badgeText": "text-purple-700"
+  },
+  {
     "id": "cat-deals",
     "name": "Deals & Gear",
     "slug": "deals",
@@ -2309,6 +2320,59 @@ export const SEED_ARTICLES: Article[] = [
       {
         "title": "UNESCO World Heritage Centre Monument Archive",
         "url": "https://whc.unesco.org"
+      }
+    ]
+  },
+  {
+    "id": "art-ent-games-1",
+    "title": "Next-Gen Gaming in 2026: Ray Tracing, AI Upscaling, and Handheld Powerhouses",
+    "slug": "next-gen-gaming-trends-ray-tracing-ai-handhelds-2026",
+    "excerpt": "From Steam Deck successors to neural frame generation and Unreal Engine 5.4 breakthroughs: the modern gaming landscape decoded.",
+    "content": "The video game industry in 2026 represents a seismic technological leap, marrying mobile battery efficiency with photorealistic visual fidelity.\n\n## 1. Handheld Gaming Consoles Come of Age\nWhat began with the original handheld PC revolution has transformed into an established hardware category. Custom APUs featuring AMD RDNA 3.5 and Intel Battlemage graphics now deliver stable 60 FPS gameplay at 1080p in 15W envelopes.\n\n## 2. Neural Rendering and Generative Frame Rates\nModern hardware is no longer brute-forcing native pixel calculations. Machine learning reconstructors like DLSS 3.7 and FSR 4 dynamically predict frames with imperceptible latency overhead, enabling ray-traced reflections on mid-range rigs.\n\n## 3. Physics Simulation and Reactive Game Worlds\nWith high-speed NVMe direct storage protocols now standard on PC and modern consoles, streaming massive world geometries without stuttering enables deeper environmental destructibility and dynamic weather systems.",
+    "cover_image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80",
+    "cover_caption": "RGB glowing gaming station with controller and mechanical peripherals.",
+    "category": "Games",
+    "category_slug": "entertainment-games",
+    "author": {
+      "id": "usr-sandeep",
+      "name": "Sandeep",
+      "role": "Lead Travel & Tech Editor",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"
+    },
+    "tags": [
+      "Gaming",
+      "Hardware",
+      "PC Gaming",
+      "Consoles",
+      "Tech Reviews"
+    ],
+    "status": "published",
+    "published_at": "Oct 22, 2026",
+    "read_time": "6 min read",
+    "is_lead_story": false,
+    "is_featured": true,
+    "views_count": 2180,
+    "table_of_contents": [
+      {
+        "id": "1-handheld-gaming-consoles-come-of-age",
+        "title": "1. Handheld Gaming Consoles Come of Age",
+        "level": 2
+      },
+      {
+        "id": "2-neural-rendering-and-generative-frame-rates",
+        "title": "2. Neural Rendering and Generative Frame Rates",
+        "level": 2
+      },
+      {
+        "id": "3-physics-simulation-and-reactive-game-worlds",
+        "title": "3. Physics Simulation and Reactive Game Worlds",
+        "level": 2
+      }
+    ],
+    "references": [
+      {
+        "title": "Digital Foundry Technical Analysis Archive",
+        "url": "https://www.eurogamer.net/digitalfoundry"
       }
     ]
   },

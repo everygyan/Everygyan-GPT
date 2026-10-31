@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { fetchArticlesByCategoryPaginated, PaginatedResult } from '../services/articleService';
+import { fetchDynamicPages } from '../services/navigationService';
 import { CATEGORIES } from '../data/seedData';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -84,6 +85,43 @@ export const CategoryPage: React.FC = () => {
             cat = CATEGORIES.find((c) => c.slug === 'news-asia') || null;
           } else if (normalizedSlug === 'geopolitics') {
             cat = CATEGORIES.find((c) => c.slug === 'news-world') || null;
+          } else {
+            // Check dynamically created pages from Supabase/admin dashboard
+            try {
+              const dynPages = await fetchDynamicPages();
+              const dyn = dynPages.find((p) => p.slug.toLowerCase() === normalizedSlug);
+              if (dyn) {
+                cat = {
+                  id: dyn.id,
+                  name: dyn.title,
+                  slug: dyn.slug,
+                  description: dyn.description || `Verified guides, articles and news in ${dyn.title} on EveryGyan.`,
+                  icon: dyn.icon || 'Folder',
+                  color: dyn.color || '#e11d48',
+                  badgeBg: 'bg-red-50',
+                  badgeText: 'text-red-700',
+                };
+              }
+            } catch {
+              // Ignore and use fallback
+            }
+
+            if (!cat) {
+              const formattedName = normalizedSlug
+                .split('-')
+                .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                .join(' ');
+              cat = {
+                id: `cat-${normalizedSlug}`,
+                name: formattedName,
+                slug: normalizedSlug,
+                description: `Verified articles, news, and learning tutorials in ${formattedName} on EveryGyan.`,
+                icon: 'Folder',
+                color: '#475569',
+                badgeBg: 'bg-slate-50',
+                badgeText: 'text-slate-700',
+              };
+            }
           }
         }
 

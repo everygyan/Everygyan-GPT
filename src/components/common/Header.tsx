@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Search, User, Menu, X, ArrowRight, ChevronDown } from 'lucide-react';
+import { NavigationMenuItem } from '../../types';
+import { fetchNavigationMenu, DEFAULT_NAVIGATION } from '../../services/navigationService';
 
 interface HeaderProps {
   onOpenSearch: () => void;
@@ -9,91 +11,31 @@ interface HeaderProps {
   currentUser?: { name: string; role: string } | null;
 }
 
-interface SubMenuItem {
-  name: string;
-  path: string;
-  description?: string;
-}
-
-interface NavGroup {
-  name: string;
-  type: 'link' | 'dropdown';
-  path: string;
-  subItems?: SubMenuItem[];
-  badge?: string;
-}
-
-const NAV_STRUCTURE: NavGroup[] = [
-  {
-    name: 'About us',
-    type: 'link',
-    path: '/about',
-  },
-  {
-    name: 'Travel',
-    type: 'dropdown',
-    path: '/category/travel',
-    subItems: [
-      { name: 'World', path: '/category/travel-world', description: 'Global routes & round-the-world trips' },
-      { name: 'Asia', path: '/category/travel-asia', description: 'Temples, beaches & cultural journeys' },
-      { name: 'Europe', path: '/category/travel-europe', description: 'Historic cities & scenic alpine rail' },
-      { name: 'Americas', path: '/category/travel-americas', description: 'National parks & coastal road trips' },
-      { name: 'Health', path: '/category/health', description: 'Wellness routines & longevity guides' },
-    ],
-  },
-  {
-    name: 'News',
-    type: 'dropdown',
-    path: '/category/news',
-    subItems: [
-      { name: 'Latest News', path: '/category/latest-news', description: 'Breaking stories & key daily headlines' },
-      { name: 'World news', path: '/category/news-world', description: 'Geopolitics, climate accords & trade' },
-      { name: 'Asia news', path: '/category/news-asia', description: 'Regional development & championships' },
-      { name: 'Europe news', path: '/category/news-europe', description: 'European policy & energy transition' },
-      { name: 'Americas News', path: '/category/news-americas', description: 'Space exploration, tech & policy' },
-    ],
-  },
-  {
-    name: 'Learn',
-    type: 'dropdown',
-    path: '/category/learn',
-    subItems: [
-      { name: 'AI', path: '/category/learn-ai', description: 'Multimodal AI & autonomous agents' },
-      { name: 'SAP', path: '/category/learn-sap', description: 'S/4HANA, ABAP RAP & CDS tutorials' },
-      { name: 'German', path: '/category/learn-german', description: 'Grammar rules & workplace communication' },
-      { name: 'Latest Updates', path: '/category/learn-updates', description: 'Cloud certifications & tech roadmaps' },
-    ],
-  },
-  {
-    name: 'Entertainment',
-    type: 'dropdown',
-    path: '/category/entertainment',
-    subItems: [
-      { name: 'Movies', path: '/category/entertainment-movies', description: 'Cinema critiques, 70mm & IMAX' },
-      { name: 'Series', path: '/category/entertainment-series', description: 'Prestige limited series & streaming' },
-      { name: 'Celeb news', path: '/category/entertainment-celeb-news', description: 'Interviews, Cannes & red carpets' },
-      { name: 'Photos', path: '/category/entertainment-photos', description: 'Wildlife photography & ancient marvels' },
-    ],
-  },
-  {
-    name: 'Deals',
-    type: 'link',
-    path: '/deals',
-    badge: 'Hot',
-  },
-];
-
 export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onOpenAuth,
   onOpenSubscribe,
   currentUser,
 }) => {
+  const [navItems, setNavItems] = useState<NavigationMenuItem[]>(DEFAULT_NAVIGATION);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<Record<string, boolean>>({});
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
+
+  // Load navigation dynamically from Supabase (falls back to DEFAULT_NAVIGATION)
+  useEffect(() => {
+    let isMounted = true;
+    fetchNavigationMenu().then((items) => {
+      if (isMounted && items && items.length > 0) {
+        setNavItems(items);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Close dropdown on outside click or escape key
   useEffect(() => {
@@ -130,6 +72,8 @@ export const Header: React.FC<HeaderProps> = ({
     }));
   };
 
+  const visibleNav = navItems.filter((item) => item.visible);
+
   return (
     <header className="sticky top-0 z-40 bg-[#0b1120] text-white border-b border-slate-800/80 backdrop-blur-md bg-opacity-95 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -157,16 +101,17 @@ export const Header: React.FC<HeaderProps> = ({
             className="hidden lg:flex items-center space-x-1 xl:space-x-2"
             aria-label="Main Navigation"
           >
-            {NAV_STRUCTURE.map((item) => {
+            {visibleNav.map((item) => {
               const isDirectActive = location.pathname === item.path;
-              const isChildActive =
-                item.subItems?.some((sub) => location.pathname === sub.path) || false;
+              const visibleChildren = (item.children || []).filter((sub) => sub.visible);
+              const hasDropdown = item.type === 'dropdown' && visibleChildren.length > 0;
+              const isChildActive = visibleChildren.some((sub) => location.pathname === sub.path);
               const isOpen = activeDropdown === item.name;
 
-              if (item.type === 'link') {
+              if (!hasDropdown) {
                 return (
                   <Link
-                    key={item.name}
+                    key={item.id || item.name}
                     to={item.path}
                     className={`px-3 py-1.5 text-xs xl:text-sm font-semibold rounded-md transition-colors relative flex items-center gap-1.5 ${
                       isDirectActive
@@ -186,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               return (
                 <div
-                  key={item.name}
+                  key={item.id || item.name}
                   className="relative"
                   onMouseEnter={() => setActiveDropdown(item.name)}
                   onMouseLeave={() => setActiveDropdown(null)}
@@ -223,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
 
                   {/* Desktop Dropdown Panel */}
-                  {isOpen && item.subItems && (
+                  {isOpen && (
                     <div className="absolute top-full left-0 pt-1 w-64 z-50">
                       <div className="bg-[#0f172a] border border-slate-700/80 rounded-2xl shadow-2xl py-2 px-1 backdrop-blur-xl">
                         <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 mb-1 flex items-center justify-between">
@@ -236,11 +181,11 @@ export const Header: React.FC<HeaderProps> = ({
                             view all →
                           </Link>
                         </div>
-                        {item.subItems.map((sub) => {
+                        {visibleChildren.map((sub) => {
                           const isSubActive = location.pathname === sub.path;
                           return (
                             <Link
-                              key={sub.name}
+                              key={sub.id || sub.name}
                               to={sub.path}
                               onClick={() => setActiveDropdown(null)}
                               className={`flex flex-col px-3 py-2 rounded-xl text-xs transition-colors ${
@@ -342,12 +287,15 @@ export const Header: React.FC<HeaderProps> = ({
       {mobileMenuOpen && (
         <div className="sm:hidden bg-[#0f172a] border-b border-slate-800 px-4 pt-3 pb-6 space-y-3 max-h-[85vh] overflow-y-auto">
           <div className="space-y-1 pt-1">
-            {NAV_STRUCTURE.map((item) => {
-              if (item.type === 'link') {
+            {visibleNav.map((item) => {
+              const visibleChildren = (item.children || []).filter((sub) => sub.visible);
+              const hasDropdown = item.type === 'dropdown' && visibleChildren.length > 0;
+
+              if (!hasDropdown) {
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
-                    key={item.name}
+                    key={item.id || item.name}
                     to={item.path}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-xl ${
@@ -366,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({
 
               const isExpanded = Boolean(mobileExpanded[item.name]);
               return (
-                <div key={item.name} className="border-b border-slate-800/80 pb-1">
+                <div key={item.id || item.name} className="border-b border-slate-800/80 pb-1">
                   <div className="flex items-center justify-between">
                     <Link
                       to={item.path}
@@ -389,11 +337,11 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                   </div>
 
-                  {isExpanded && item.subItems && (
+                  {isExpanded && (
                     <div className="pl-4 pr-2 pb-2 space-y-1">
-                      {item.subItems.map((sub) => (
+                      {visibleChildren.map((sub) => (
                         <Link
-                          key={sub.name}
+                          key={sub.id || sub.name}
                           to={sub.path}
                           onClick={() => setMobileMenuOpen(false)}
                           className={`block px-3 py-2 text-xs rounded-lg ${

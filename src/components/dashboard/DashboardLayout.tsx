@@ -8,6 +8,7 @@ import {
   Users,
   Users2,
   Send,
+  Layers,
   Settings,
   ExternalLink,
   LogOut,
@@ -38,6 +39,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
     { name: 'Subscribers', href: '/dashboard/subscribers', icon: Users },
     { name: 'Newsletter', href: '/dashboard/newsletter', icon: Send },
     { name: 'About & Team', href: '/dashboard/about', icon: Users2 },
+    { name: 'Navigation & Pages', href: '/dashboard/navigation', icon: Layers },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
