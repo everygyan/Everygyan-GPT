@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { HeroLeadStory } from '../components/home/HeroLeadStory';
 import { LatestNewsSidebar } from '../components/home/LatestNewsSidebar';
-import { CategoryPills } from '../components/common/CategoryPills';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { NewsletterBanner } from '../components/common/NewsletterBanner';
 import { HeroSkeleton, SidebarSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -105,11 +104,6 @@ export const HomePage: React.FC = () => {
             onAction={() => window.location.reload()}
           />
         )}
-      </section>
-
-      {/* Category Icons Row */}
-      <section aria-label="Explore Topics">
-        <CategoryPills />
       </section>
 
       {/* Featured Articles 3-Column Grid */}
