@@ -119,13 +119,14 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
 
   // AI Move Trigger
   useEffect(() => {
+    // Only trigger when in AI mode, game active, and it is the bot's turn
     if (
       gameMode !== 'ai' ||
       gameState.isCheckmate ||
       gameState.isDraw ||
-      gameState.turn === playerColor ||
-      isAiThinking
+      gameState.turn === playerColor
     ) {
+      setIsAiThinking(false);
       return;
     }
 
@@ -147,10 +148,10 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
         }
       }
       setIsAiThinking(false);
-    }, 450);
+    }, 350);
 
     return () => clearTimeout(timer);
-  }, [gameState, gameMode, playerColor, aiDifficulty, isAiThinking, soundEnabled]);
+  }, [gameState, gameMode, playerColor, aiDifficulty, soundEnabled]);
 
   // Reset Game
   const handleResetGame = async () => {
