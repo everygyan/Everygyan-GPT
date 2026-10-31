@@ -7,7 +7,7 @@ import { CATEGORIES } from '../data/seedData';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
-import { ChessCard } from '../components/games/ChessCard';
+import { GamesHub } from '../components/games/GamesHub';
 import { Article, Category } from '../types';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
@@ -196,9 +196,9 @@ export const CategoryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Featured Online Games (Prominently displayed on Games page) */}
+      {/* Featured Online Games & Categories Hub (Prominently displayed on Games page) */}
       {(slug?.toLowerCase() === 'entertainment-games' || slug?.toLowerCase() === 'games') && (
-        <ChessCard />
+        <GamesHub />
       )}
 
       {/* Articles Grid */}
@@ -252,7 +252,7 @@ export const CategoryPage: React.FC = () => {
         <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-6 text-center space-y-2">
           <p className="text-sm font-semibold text-slate-700">More Arcade & Board Games Coming Soon!</p>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Our editorial team is authoring gaming articles, hardware guides, and preparing additional online mini-games. Play Chess above in the meantime!
+            Our editorial team is authoring gaming articles, hardware guides, and preparing additional online mini-games. Enjoy our playable Chess and 2048 games above in the meantime!
           </p>
         </div>
       ) : (
