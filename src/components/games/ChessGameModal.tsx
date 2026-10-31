@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X, RotateCcw, Volume2, VolumeX, Bot, Users, Trophy,
   Undo2, RefreshCw, Maximize2, Minimize2,
@@ -52,6 +52,14 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
 
+  // Keep a stable ref to callback to prevent infinite re-render loops
+  const onStatsUpdatedRef = useRef(onStatsUpdated);
+  useEffect(() => {
+    onStatsUpdatedRef.current = onStatsUpdated;
+  }, [onStatsUpdated]);
+
+  const hasHandledGameOverRef = useRef(false);
+
   // User Stats
   const [stats, setStats] = useState<GameStats>({
     gamesPlayed: 0,
@@ -61,18 +69,16 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
     resetsCount: 0,
   });
 
-  // Load stats
-  const refreshStats = useCallback(async () => {
-    const s = await getChessStats(user?.id);
-    setStats(s);
-    if (onStatsUpdated) onStatsUpdated(s);
-  }, [user?.id, onStatsUpdated]);
-
+  // Load stats once on mount
   useEffect(() => {
-    if (isOpen) {
-      refreshStats();
-    }
-  }, [isOpen, refreshStats]);
+    let isMounted = true;
+    getChessStats(user?.id).then((s) => {
+      if (isMounted) setStats(s);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id]);
 
   // Compute legal moves for current selection
   const currentLegalMoves = useMemo(() => {
@@ -85,27 +91,31 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
 
   // Handle Game Over
   useEffect(() => {
-    if (!gameState.isCheckmate && !gameState.isDraw) return;
+    if (!gameState.isCheckmate && !gameState.isDraw) {
+      hasHandledGameOverRef.current = false;
+      return;
+    }
+
+    if (hasHandledGameOverRef.current) return;
+    hasHandledGameOverRef.current = true;
 
     if (soundEnabled) sound.playGameOver();
 
-    async function handleGameOver() {
-      let result: 'win' | 'loss' | 'draw' = 'draw';
-      if (gameState.isCheckmate) {
-        const winningColor = gameState.turn === 'w' ? 'b' : 'w';
-        if (gameMode === 'ai') {
-          result = winningColor === playerColor ? 'win' : 'loss';
-        } else {
-          result = 'win';
-        }
+    let result: 'win' | 'loss' | 'draw' = 'draw';
+    if (gameState.isCheckmate) {
+      const winningColor = gameState.turn === 'w' ? 'b' : 'w';
+      if (gameMode === 'ai') {
+        result = winningColor === playerColor ? 'win' : 'loss';
+      } else {
+        result = 'win';
       }
-      const updated = await recordGameResult(result, user?.id);
-      setStats(updated);
-      if (onStatsUpdated) onStatsUpdated(updated);
     }
 
-    handleGameOver();
-  }, [gameState.isCheckmate, gameState.isDraw, gameState.turn, gameMode, playerColor, user?.id, soundEnabled, onStatsUpdated]);
+    recordGameResult(result, user?.id).then((updated) => {
+      setStats(updated);
+      onStatsUpdatedRef.current?.(updated);
+    });
+  }, [gameState.isCheckmate, gameState.isDraw, gameState.turn, gameMode, playerColor, user?.id, soundEnabled]);
 
   // AI Move Trigger
   useEffect(() => {
@@ -144,12 +154,13 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
 
   // Reset Game
   const handleResetGame = async () => {
+    hasHandledGameOverRef.current = false;
     setGameState(createInitialGameState());
     setSelectedPos(null);
     setIsAiThinking(false);
     const updated = await recordGameReset(user?.id);
     setStats(updated);
-    if (onStatsUpdated) onStatsUpdated(updated);
+    onStatsUpdatedRef.current?.(updated);
   };
 
   // Undo Move
@@ -214,7 +225,7 @@ export const ChessGameModal: React.FC<ChessGameModalProps> = ({
     if (!confirm('Are you sure you want to reset all your chess statistics to zero?')) return;
     const cleared = await resetAllStats(user?.id);
     setStats(cleared);
-    if (onStatsUpdated) onStatsUpdated(cleared);
+    onStatsUpdatedRef.current?.(cleared);
   };
 
   if (!isOpen) return null;

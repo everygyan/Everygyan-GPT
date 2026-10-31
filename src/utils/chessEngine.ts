@@ -711,16 +711,19 @@ export function getAIMove(state: GameState, difficulty: AIDifficulty): Move | nu
     return bestMoves[Math.floor(Math.random() * bestMoves.length)] || legal[0];
   }
 
-  // Hard: Minimax depth 3 with alpha-beta pruning
+  // Hard: 2-ply Minimax with capture-ordered alpha-beta pruning
   const isBlack = state.turn === 'b';
   let bestScore = isBlack ? Infinity : -Infinity;
   let bestMoves: Move[] = [];
 
-  for (const move of legal) {
+  // Sort candidate moves so captures are analyzed first for optimal pruning
+  const sortedLegal = [...legal].sort((a, b) => (b.captured ? 1 : 0) - (a.captured ? 1 : 0));
+
+  for (const move of sortedLegal) {
     const nextBoard = applyMoveOnBoard(state.board, move);
     const score = minimax(
       nextBoard,
-      2,
+      1,
       -Infinity,
       Infinity,
       !isBlack,
@@ -744,7 +747,7 @@ export function getAIMove(state: GameState, difficulty: AIDifficulty): Move | nu
     }
   }
 
-  return bestMoves[Math.floor(Math.random() * bestMoves.length)] || legal[0];
+  return bestMoves[Math.floor(Math.random() * bestMoves.length)] || sortedLegal[0];
 }
 
 function minimax(
@@ -768,6 +771,9 @@ function minimax(
     }
     return 0; // Stalemate
   }
+
+  // Prioritize captures for maximum alpha-beta cutoff
+  legal.sort((a, b) => (b.captured ? 1 : 0) - (a.captured ? 1 : 0));
 
   if (isMaximizing) {
     let maxEval = -Infinity;

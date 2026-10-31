@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Trophy, Users, Bot, RotateCcw, Sparkles } from 'lucide-react';
 import { ChessGameModal } from './ChessGameModal';
 import { getChessStats, GameStats } from '../../services/gameStatsService';
@@ -19,6 +19,10 @@ export const ChessCard: React.FC = () => {
     getChessStats(user?.id).then(setStats);
   }, [user?.id]);
 
+  const handleStatsUpdated = useCallback((updated: GameStats) => {
+    setStats(updated);
+  }, []);
+
   const winRate =
     stats.gamesPlayed > 0 ? Math.round((stats.gamesWon / stats.gamesPlayed) * 100) : 0;
 
@@ -32,17 +36,22 @@ export const ChessCard: React.FC = () => {
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Left: Large Game Visual Icon & Badges */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-6 max-w-2xl">
-            {/* Large Icon Container */}
-            <div className="relative group flex-shrink-0">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-red-600 to-amber-600 p-0.5 shadow-2xl shadow-red-900/30">
-                <div className="w-full h-full bg-[#0b1120] rounded-[22px] flex items-center justify-center text-5xl sm:text-6xl select-none group-hover:scale-105 transition-transform duration-300">
+            {/* Large Icon Container (Clickable to play) */}
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="relative group flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 rounded-3xl"
+              aria-label="Play Classical Chess Master"
+            >
+              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-gradient-to-br from-red-600 to-amber-600 p-0.5 shadow-2xl shadow-red-900/30 group-hover:shadow-red-600/40 transition-all duration-300">
+                <div className="w-full h-full bg-[#0b1120] rounded-[22px] flex items-center justify-center text-5xl sm:text-6xl select-none group-hover:scale-110 transition-transform duration-300">
                   ♟️
                 </div>
               </div>
-              <span className="absolute -bottom-2 -right-2 px-2 py-0.5 bg-red-600 text-[10px] font-black uppercase tracking-wider rounded-full shadow-md">
-                Online
+              <span className="absolute -bottom-2 -right-2 px-2.5 py-0.5 bg-red-600 text-[10px] font-black uppercase tracking-wider rounded-full shadow-md">
+                Play
               </span>
-            </div>
+            </button>
 
             {/* Title & Description */}
             <div className="space-y-2">
@@ -92,6 +101,7 @@ export const ChessCard: React.FC = () => {
           {/* Right: Big Play Now CTA Button */}
           <div className="flex flex-col items-center sm:items-end gap-2 flex-shrink-0">
             <button
+              type="button"
               onClick={() => setModalOpen(true)}
               className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 active:scale-95 text-white font-extrabold text-base sm:text-lg rounded-2xl shadow-xl shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-200"
             >
@@ -108,12 +118,14 @@ export const ChessCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Chess Game Interactive Popup */}
-      <ChessGameModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onStatsUpdated={(updated) => setStats(updated)}
-      />
+      {/* Chess Game Interactive Popup (Only mounted when opened) */}
+      {modalOpen && (
+        <ChessGameModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onStatsUpdated={handleStatsUpdated}
+        />
+      )}
     </>
   );
 };
