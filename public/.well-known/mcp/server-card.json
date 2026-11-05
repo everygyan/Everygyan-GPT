@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json.schemastore.org/mcp-server-card.json",
+  "name": "EveryGyan Knowledge Hub MCP Server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for querying EveryGyan articles, guides, tutorials, and category archives.",
+  "url": "https://everygyan.com/.well-known/mcp/server-card.json",
+  "endpoint": "https://everygyan.com/api/mcp",
+  "transport": "streamable-http",
+  "capabilities": {
+    "tools": {
+      "listChanged": false
+    },
+    "resources": {
+      "subscribe": false,
+      "listChanged": false
+    },
+    "prompts": {
+      "listChanged": false
+    }
+  },
+  "serverInfo": {
+    "name": "everygyan-knowledge-server",
+    "title": "EveryGyan Official MCP Server",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "search_everygyan_articles",
+      "description": "Search published articles, tutorials, travel guides, and stories across EveryGyan.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search term or keywords"
+          },
+          "category": {
+            "type": "string",
+            "description": "Optional category filter (e.g. tech, travel, news, tutorials)"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "get_article_by_slug",
+      "description": "Retrieve full content, markdown text, author byline, and metadata for a specific EveryGyan article slug.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string",
+            "description": "URL slug of the article"
+          }
+        },
+        "required": ["slug"]
+      }
+    }
+  ]
+}

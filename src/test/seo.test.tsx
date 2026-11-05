@@ -189,8 +189,63 @@ describe('Sitemap & Robots Directives Compliance', () => {
     expect(htmlContent).toContain('Knowledge for Everyone, Everywhere');
     expect(htmlContent).toContain('Featured Stories & Editorial Deep Dives');
     expect(htmlContent).toContain('10 Amazing Places to Visit in Europe with Family');
+    expect(htmlContent).toContain('<link rel="canonical" href="https://everygyan.com/" />');
+    expect(htmlContent).toContain('<h1');
+    expect(htmlContent).toContain('+1-800-555-0199');
+    expect(htmlContent).toContain('contact@everygyan.com');
+    expect(htmlContent).toContain('sameAs');
+    expect(htmlContent).toContain('NewsMediaOrganization');
+    expect(htmlContent).toContain('FAQPage');
+    expect(htmlContent).toContain('ItemList');
     expect(htmlContent).toContain('<noscript>');
     // Ensure raw HTML has substantial text for AI agents and search crawlers
     expect(htmlContent.length).toBeGreaterThan(1500);
+  });
+
+  it('verifies public/llms.txt is well-formed with # title, > summary, and markdown links', () => {
+    const llmsPath = path.resolve(process.cwd(), 'public', 'llms.txt');
+    expect(fs.existsSync(llmsPath)).toBe(true);
+
+    const content = fs.readFileSync(llmsPath, 'utf8');
+    expect(content.startsWith('# EveryGyan')).toBe(true);
+    expect(content).toContain('> Knowledge for Everyone, Everywhere');
+    expect(content).toContain('## Core Sections');
+    expect(content).toContain('https://everygyan.com/about');
+    expect(content).toContain('https://everygyan.com/category/travel');
+    expect(content).toContain('https://everygyan.com/category/tech');
+  });
+
+  it('verifies public/index.md provides a clean Markdown representation for AI agents', () => {
+    const mdPath = path.resolve(process.cwd(), 'public', 'index.md');
+    expect(fs.existsSync(mdPath)).toBe(true);
+
+    const content = fs.readFileSync(mdPath, 'utf8');
+    expect(content).toContain('# EveryGyan');
+    expect(content).toContain('contact@everygyan.com');
+    expect(content).toContain('+1 (800) 555-0199');
+    expect(content).toContain('https://everygyan.com/category/travel');
+  });
+
+  it('verifies public/.well-known/mcp/server-card.json is published with valid MCP schema', () => {
+    const cardPath = path.resolve(process.cwd(), 'public', '.well-known', 'mcp', 'server-card.json');
+    expect(fs.existsSync(cardPath)).toBe(true);
+
+    const parsed = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
+    expect(parsed.name).toContain('EveryGyan');
+    expect(parsed.version).toBe('1.0.0');
+    expect(parsed.capabilities).toBeDefined();
+    expect(parsed.tools.length).toBeGreaterThan(0);
+  });
+
+  it('verifies public/.htaccess advertises Link headers and supports Markdown content negotiation', () => {
+    const htaccessPath = path.resolve(process.cwd(), 'public', '.htaccess');
+    const content = fs.readFileSync(htaccessPath, 'utf8');
+
+    expect(content).toContain('Link');
+    expect(content).toContain('/llms.txt');
+    expect(content).toContain('/index.md');
+    expect(content).toContain('Accept');
+    expect(content).toContain('text/markdown');
+    expect(content).toContain('.well-known');
   });
 });

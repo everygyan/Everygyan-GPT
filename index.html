@@ -2,6 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EveryGyan — Knowledge for Everyone, Everywhere</title>
+    <meta name="description" content="Editorial tutorials, technology news, travel guides, German language learning, and curated insights." />
+
+    <!-- Canonical Link (RFC 6596) -->
+    <link rel="canonical" href="https://everygyan.com/" />
+
+    <!-- Machine-Readable Alternates & Discovery (RFC 8288 / llmstxt.org) -->
+    <link rel="alternate" type="text/plain" href="https://everygyan.com/llms.txt" title="LLMs.txt" />
+    <link rel="alternate" type="text/markdown" href="https://everygyan.com/index.md" title="Markdown Alternate" />
+    <link rel="service-doc" type="application/json" href="https://everygyan.com/.well-known/mcp/server-card.json" title="MCP Server Card" />
+
     <!-- Google Search & Browser Favicon Suite -->
     <link rel="icon" href="/favicon.ico" sizes="48x48 32x32 16x16" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
@@ -12,18 +24,147 @@
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#dc2626" />
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EveryGyan — Knowledge for Everyone, Everywhere</title>
-    <meta name="description" content="Editorial tutorials, technology news, travel guides, German language learning, and curated insights." />
-
-    <!-- Google Search Structured Data (Organization & Logo) -->
+    <!-- Comprehensive Multi-Type Structured Data (Organization, WebSite, FAQPage, ItemList) -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "EveryGyan",
-        "url": "https://everygyan.com",
-        "logo": "https://everygyan.com/favicon-512x512.png"
+        "@graph": [
+          {
+            "@type": "NewsMediaOrganization",
+            "@id": "https://everygyan.com/#organization",
+            "name": "EveryGyan",
+            "url": "https://everygyan.com",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://everygyan.com/favicon-512x512.png",
+              "width": 512,
+              "height": 512
+            },
+            "description": "EveryGyan is an independent digital publication providing verified journalism, hands-on tutorials, travel itineraries, German language learning, and interactive browser games.",
+            "telephone": "+1-800-555-0199",
+            "email": "contact@everygyan.com",
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "100 Innovation Way",
+              "addressLocality": "San Francisco",
+              "addressRegion": "CA",
+              "postalCode": "94105",
+              "addressCountry": "US"
+            },
+            "contactPoint": [
+              {
+                "@type": "ContactPoint",
+                "telephone": "+1-800-555-0199",
+                "contactType": "editorial",
+                "email": "contact@everygyan.com",
+                "availableLanguage": ["English", "German"]
+              }
+            ],
+            "sameAs": [
+              "https://twitter.com/everygyan",
+              "https://facebook.com/everygyan",
+              "https://linkedin.com/company/everygyan",
+              "https://github.com/everygyan"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://everygyan.com/#website",
+            "url": "https://everygyan.com",
+            "name": "EveryGyan",
+            "publisher": {
+              "@id": "https://everygyan.com/#organization"
+            },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://everygyan.com/search?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://everygyan.com/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is EveryGyan?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "EveryGyan is an independent knowledge publication offering technology news, German language curriculum, European travel guides, and online games like Chess and 2048."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Is content on EveryGyan free to read?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Yes, all articles, learning guides, and browser games on EveryGyan are 100% free and open access for readers worldwide."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "How does EveryGyan maintain editorial quality?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Every article is authored and peer-reviewed by domain specialists following strict fact-checking standards and continuous technical updates."
+                }
+              }
+            ]
+          },
+          {
+            "@type": "ItemList",
+            "@id": "https://everygyan.com/#featured-stories",
+            "name": "Featured Stories & Editorial Deep Dives",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "url": "https://everygyan.com/article/europe-travel-destinations",
+                "name": "10 Amazing Places to Visit in Europe with Family"
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "url": "https://everygyan.com/article/modern-ai-engineering-trends",
+                "name": "Modern AI & Machine Learning: Navigating the Era of Agentic Software"
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "url": "https://everygyan.com/category/learn-german",
+                "name": "German Language Mastery: Complete Structured Curriculum from A1 to B1"
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "url": "https://everygyan.com/category/entertainment-games",
+                "name": "Browser Gaming Hub: Classical Chess Master & 2048 Puzzle"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+
+    <!-- WebMCP Tool Registration (W3C Model Context Protocol for In-Browser Agents) -->
+    <script>
+      if (typeof navigator !== 'undefined' && navigator.modelContext && typeof navigator.modelContext.registerTool === 'function') {
+        try {
+          navigator.modelContext.registerTool({
+            name: 'search_everygyan',
+            description: 'Search articles, tutorials, travel guides, and news across EveryGyan',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: { type: 'string', description: 'Search keywords' }
+              },
+              required: ['query']
+            },
+            execute: async function(args) {
+              return { url: 'https://everygyan.com/search?q=' + encodeURIComponent(args.query || '') };
+            }
+          });
+        } catch (e) {}
       }
     </script>
   </head>
@@ -47,6 +188,8 @@
             <a href="/category/entertainment-games" style="color: #334155; text-decoration: none;">Entertainment & Games</a>
             <a href="/deals" style="color: #dc2626; text-decoration: none;">Deals</a>
             <a href="/contact" style="color: #334155; text-decoration: none;">Contact</a>
+            <a href="/privacy" style="color: #334155; text-decoration: none;">Privacy</a>
+            <a href="/terms" style="color: #334155; text-decoration: none;">Terms</a>
           </nav>
         </div>
       </header>
@@ -58,9 +201,33 @@
           <h1 id="hero-heading" style="font-size: 36px; font-weight: 900; color: #0f172a; margin: 8px 0 16px; line-height: 1.2;">
             EveryGyan — Editorial Guides, Global News, and Interactive Learning
           </h1>
-          <p style="font-size: 18px; color: #475569; max-width: 800px; line-height: 1.6;">
+          <p style="font-size: 18px; color: #475569; max-width: 800px; line-height: 1.6; margin-bottom: 20px;">
             EveryGyan delivers fact-checked journalism, practical technology guides, structured language courses, in-depth travel itineraries, and browser-based strategy games. Our mission is to make actionable knowledge accessible to everyone, everywhere.
           </p>
+
+          <!-- WebMCP Search Form Annotation (W3C Agent Ready) -->
+          <form
+            action="/search"
+            method="get"
+            role="search"
+            toolname="searchEveryGyan"
+            tooldescription="Search EveryGyan articles, tutorials, travel guides, and online games"
+            style="display: flex; gap: 8px; max-width: 500px;"
+          >
+            <input
+              type="text"
+              name="q"
+              placeholder="Search tutorials, articles, travel guides..."
+              aria-label="Search EveryGyan"
+              style="flex: 1; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px;"
+            />
+            <button
+              type="submit"
+              style="background: #dc2626; color: #ffffff; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer;"
+            >
+              Search
+            </button>
+          </form>
         </section>
 
         <!-- Featured & Lead Stories -->
@@ -149,24 +316,34 @@
           </div>
         </section>
 
-        <!-- Editorial Standards & Mission -->
+        <!-- Editorial Standards & Direct Machine-Readable Contact Details -->
         <section aria-labelledby="standards-heading" style="margin-bottom: 32px;">
           <h2 id="standards-heading" style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 8px;">
-            Our Editorial Standards & Content Commitment
+            Our Editorial Standards & Contact Information
           </h2>
-          <p style="font-size: 14px; color: #64748b; line-height: 1.6;">
+          <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin-bottom: 12px;">
             Every story, tutorial, and reference published on EveryGyan is authored and verified by domain specialists. We enforce strict fact-checking, editorial independence, and continuous updating of technical instructions to ensure our readers receive high-fidelity, actionable guidance.
           </p>
+          <div style="font-size: 13px; color: #475569; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px;">
+            <strong>Direct Editorial Contact:</strong>
+            Email: <a href="mailto:contact@everygyan.com" style="color: #dc2626; font-weight: 600;">contact@everygyan.com</a> •
+            Telephone: <a href="tel:+18005550199" style="color: #dc2626; font-weight: 600;">+1 (800) 555-0199</a> •
+            Address: 100 Innovation Way, San Francisco, CA 94105, United States
+          </div>
         </section>
       </main>
 
       <footer style="border-top: 1px solid #e2e8f0; padding: 24px; text-align: center; font-size: 12px; color: #64748b; background: #ffffff;">
         <p>© 2026 EveryGyan — Knowledge for Everyone, Everywhere. All rights reserved.</p>
         <p style="margin-top: 8px;">
+          <a href="/about" style="color: #64748b; text-decoration: none; margin: 0 8px;">About Us</a> •
+          <a href="/contact" style="color: #64748b; text-decoration: none; margin: 0 8px;">Contact Us</a> •
           <a href="/privacy" style="color: #64748b; text-decoration: none; margin: 0 8px;">Privacy Policy</a> •
           <a href="/terms" style="color: #64748b; text-decoration: none; margin: 0 8px;">Terms of Service</a> •
-          <a href="/contact" style="color: #64748b; text-decoration: none; margin: 0 8px;">Contact Editorial Desk</a> •
-          <a href="/sitemap.xml" style="color: #64748b; text-decoration: none; margin: 0 8px;">XML Sitemap</a>
+          <a href="/sitemap.xml" style="color: #64748b; text-decoration: none; margin: 0 8px;">XML Sitemap</a> •
+          <a href="/llms.txt" style="color: #64748b; text-decoration: none; margin: 0 8px;">LLMs.txt</a> •
+          <a href="/index.md" style="color: #64748b; text-decoration: none; margin: 0 8px;">Markdown</a> •
+          <a href="/.well-known/mcp/server-card.json" style="color: #64748b; text-decoration: none; margin: 0 8px;">MCP Card</a>
         </p>
       </footer>
     </div>

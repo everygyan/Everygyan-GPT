@@ -1,0 +1,29 @@
+# EveryGyan Full Context Documentation
+
+> Comprehensive machine-readable documentation and knowledge index for EveryGyan (https://everygyan.com).
+
+## About EveryGyan
+EveryGyan is an independent digital publication founded to democratize practical knowledge across technology, languages, travel, enterprise software, and culture. We produce fact-checked tutorials, verified travel guides, and browser-based mini-games.
+
+### Contact Information
+- Website: https://everygyan.com
+- Editorial Inquiries: contact@everygyan.com
+- Telephone: +1-800-555-0199
+- Address: 100 Innovation Way, San Francisco, CA 94105, United States
+
+### Key Editorial Sections
+1. Travel: Detailed itineraries with budget ranges, local transport, family accessibility, and verified seasons to visit.
+2. Technology: AI agents, web engineering, cloud benchmarks, cybersecurity, and practical tutorials.
+3. German Language: Structured lessons from A1 beginner to B1 intermediate with vocabulary, grammar explanations, and tests.
+4. Tutorials: Enterprise software, SAP migration architectures, database administration, and developer workflows.
+5. Games: Classical Chess with tactical AI bot and 2-player mode, 2048 tile merger puzzle, with user score saving.
+6. Deals: Curated tech gear, software discounts, and travel deals.
+
+### Links
+- Homepage: https://everygyan.com/
+- About Us: https://everygyan.com/about
+- Contact Us: https://everygyan.com/contact
+- Privacy Policy: https://everygyan.com/privacy
+- Terms of Service: https://everygyan.com/terms
+- XML Sitemap: https://everygyan.com/sitemap.xml
+- MCP Card: https://everygyan.com/.well-known/mcp/server-card.json

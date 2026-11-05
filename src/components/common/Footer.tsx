@@ -17,9 +17,13 @@ export const Footer: React.FC = () => {
             <p className="text-sm text-slate-400 mb-4 font-medium">
               Knowledge for Everyone, Everywhere
             </p>
-            <p className="text-xs text-slate-400 leading-relaxed pr-4">
+            <p className="text-xs text-slate-400 leading-relaxed pr-4 mb-3">
               An independent digital publication covering technology breakthroughs, enterprise learning, global perspectives, wellness, and family-friendly travel.
             </p>
+            <div className="text-xs text-slate-400 space-y-1">
+              <p>Email: <a href="mailto:contact@everygyan.com" className="text-red-400 hover:text-red-300 underline font-medium">contact@everygyan.com</a></p>
+              <p>Tel: <a href="tel:+18005550199" className="text-red-400 hover:text-red-300 underline font-medium">+1 (800) 555-0199</a></p>
+            </div>
           </div>
 
           {/* Column 2: Quick Links */}

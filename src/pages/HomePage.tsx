@@ -69,6 +69,53 @@ export const HomePage: React.FC = () => {
             url: SITE_URL,
             logo: `${SITE_URL}/favicon.svg`,
             slogan: 'Knowledge for Everyone, Everywhere',
+            telephone: '+1-800-555-0199',
+            email: 'contact@everygyan.com',
+            address: {
+              '@type': 'PostalAddress',
+              streetAddress: '100 Innovation Way',
+              addressLocality: 'San Francisco',
+              addressRegion: 'CA',
+              postalCode: '94105',
+              addressCountry: 'US',
+            },
+            contactPoint: [
+              {
+                '@type': 'ContactPoint',
+                telephone: '+1-800-555-0199',
+                contactType: 'editorial',
+                email: 'contact@everygyan.com',
+                availableLanguage: ['English', 'German'],
+              },
+            ],
+            sameAs: [
+              'https://twitter.com/everygyan',
+              'https://facebook.com/everygyan',
+              'https://linkedin.com/company/everygyan',
+              'https://github.com/everygyan',
+            ],
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'FAQPage',
+            mainEntity: [
+              {
+                '@type': 'Question',
+                name: 'What is EveryGyan?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'EveryGyan is an independent digital knowledge publication featuring practical tutorials, language courses, travel guides, and online games.',
+                },
+              },
+              {
+                '@type': 'Question',
+                name: 'Is content on EveryGyan free to access?',
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: 'Yes, all editorial articles, language modules, and browser games on EveryGyan are completely free to read and play.',
+                },
+              },
+            ],
           },
         ]}
       />

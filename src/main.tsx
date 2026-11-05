@@ -2,6 +2,10 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import { registerWebMcpTools } from './utils/webMcp';
+
+// Register in-browser WebMCP tools for AI agents
+registerWebMcpTools();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

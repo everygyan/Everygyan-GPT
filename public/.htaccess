@@ -15,9 +15,19 @@ ErrorDocument 404 /404.html
   RewriteCond %{HTTP_HOST} ^www\.everygyan\.com$ [NC]
   RewriteRule ^(.*)$ https://everygyan.com/$1 [L,R=301]
 
-  # Allow direct access to index.html and 404.html
+  # Allow direct access to physical files and machine-readable endpoints
   RewriteRule ^index\.html$ - [L]
   RewriteRule ^404\.html$ - [L]
+  RewriteRule ^llms\.txt$ - [L]
+  RewriteRule ^llms-full\.txt$ - [L]
+  RewriteRule ^index\.md$ - [L]
+  RewriteRule ^\.well-known/ - [L]
+
+  # Content Negotiation: Serve Markdown representation when agent requests Accept: text/markdown
+  RewriteCond %{HTTP:Accept} text/markdown [NC,OR]
+  RewriteCond %{HTTP:Accept} text/x-markdown [NC]
+  RewriteCond %{REQUEST_URI} ^/?$
+  RewriteRule ^.*$ /index.md [L]
 
   # Route valid Single Page Application (SPA) routes to index.html
   RewriteCond %{REQUEST_URI} ^/(article|category|tag|about|deals|contact|privacy|terms|search|reset-password|newsletter|unsubscribe|dashboard|admin)(/.*)?$ [NC,OR]
@@ -34,7 +44,7 @@ ErrorDocument 404 /404.html
 
 # Gzip & Deflate Compression
 <IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json image/svg+xml text/markdown
 </IfModule>
 
 # MIME Types
@@ -43,6 +53,9 @@ ErrorDocument 404 /404.html
   AddType image/png .png
   AddType image/svg+xml .svg
   AddType application/manifest+json .webmanifest
+  AddType text/plain .txt
+  AddType text/markdown .md
+  AddType application/json .json
 </IfModule>
 
 # Production Browser Caching for Hostinger
@@ -50,6 +63,9 @@ ErrorDocument 404 /404.html
   ExpiresActive On
   ExpiresDefault "access plus 1 month"
   ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/markdown "access plus 0 seconds"
+  ExpiresByType text/plain "access plus 0 seconds"
+  ExpiresByType application/json "access plus 0 seconds"
   ExpiresByType text/css "access plus 1 year"
   ExpiresByType application/javascript "access plus 1 year"
   ExpiresByType image/webp "access plus 1 year"
@@ -61,7 +77,7 @@ ErrorDocument 404 /404.html
   ExpiresByType application/manifest+json "access plus 1 week"
 </IfModule>
 
-# Production Security & AI Content-Signal Headers
+# Production Security, AI Content-Signal & RFC 8288 Link Headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
@@ -69,24 +85,39 @@ ErrorDocument 404 /404.html
   Header set Referrer-Policy "strict-origin-when-cross-origin"
   # Declare content permissions to AI agents & crawlers via HTTP headers
   Header set Content-Signal "search=yes, ai-train=no"
+
+  # RFC 8288 Link header advertising machine-readable alternates on the homepage
+  <FilesMatch "^(index\.html)?$">
+    Header append Link '</llms.txt>; rel="alternate"; type="text/plain"'
+    Header append Link '</index.md>; rel="alternate"; type="text/markdown"'
+  </FilesMatch>
+
+  # Correct Content-Types for machine-readable endpoints
+  <Files "llms.txt">
+    Header set Content-Type "text/plain; charset=utf-8"
+  </Files>
+
+  <Files "llms-full.txt">
+    Header set Content-Type "text/plain; charset=utf-8"
+  </Files>
+
+  <Files "index.md">
+    Header set Content-Type "text/markdown; charset=utf-8"
+    Header set Vary "Accept"
+  </Files>
+
+  <Files "server-card.json">
+    Header set Content-Type "application/json; charset=utf-8"
+    Header set Access-Control-Allow-Origin "*"
+  </Files>
 </IfModule>
 
-# Allow public manifest, robots, and 404 page
-<Files "site.webmanifest">
+# Allow public discovery files
+<FilesMatch "^(llms\.txt|llms-full\.txt|index\.md|server-card\.json|404\.html|robots\.txt|site\.webmanifest|sitemap\.xml)$">
   <IfModule mod_authz_core.c>
     Require all granted
   </IfModule>
-</Files>
-<Files "robots.txt">
-  <IfModule mod_authz_core.c>
-    Require all granted
-  </IfModule>
-</Files>
-<Files "404.html">
-  <IfModule mod_authz_core.c>
-    Require all granted
-  </IfModule>
-</Files>
+</FilesMatch>
 
 # Block web access to sensitive project files (lockfiles, env, config)
 <FilesMatch "(^#.*#|\.(bak|config|dist|fla|inc|ini|log|psd|sh|sql|sw[op]|env|lock|json)|~)$">
@@ -99,6 +130,18 @@ ErrorDocument 404 /404.html
   </IfModule>
 </FilesMatch>
 
-# Block access to hidden directories and node_modules if present on server
+# Specific exception to permit MCP server-card.json and site.webmanifest
+<Files "server-card.json">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+</Files>
+<Files "site.webmanifest">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+</Files>
+
+# Block access to hidden directories and node_modules if present on server (except .well-known)
 RedirectMatch 403 ^/node_modules/
-RedirectMatch 403 ^/\.git
+RedirectMatch 403 ^/\.(?!well-known)
