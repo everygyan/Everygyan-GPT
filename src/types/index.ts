@@ -116,6 +116,7 @@ export interface Article {
   seo_description?: string;
   template_type?: TemplateType;
   template_data?: TravelTemplateData | TutorialTemplateData | Record<string, unknown>;
+  audio_url?: string;
 }
 
 export type CommentStatus = 'pending' | 'approved' | 'rejected' | 'spam';

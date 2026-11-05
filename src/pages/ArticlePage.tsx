@@ -5,6 +5,7 @@ import { fetchArticleBySlug, fetchFeaturedArticles } from '../services/articleSe
 import { TableOfContents } from '../components/article/TableOfContents';
 import { ShareBar } from '../components/article/ShareBar';
 import { CommentSection } from '../components/article/CommentSection';
+import { ArticleAudioPlayer } from '../components/article/ArticleAudioPlayer';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 import { TravelGuideTemplate } from '../components/article/TravelGuideTemplate';
@@ -209,6 +210,9 @@ export const ArticlePage: React.FC = () => {
 
         <ShareBar title={article.title} />
       </div>
+
+      {/* Listen to Article Audio Player */}
+      <ArticleAudioPlayer article={article} />
 
       {/* Cover Image */}
       <figure className="mb-10">
