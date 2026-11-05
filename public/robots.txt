@@ -8,6 +8,9 @@ Allow: /favicon.svg
 Allow: /apple-touch-icon.png
 Allow: /site.webmanifest
 
+# AI & Agent Content Signals (Search discovery allowed, AI model training disallowed)
+Content-Signal: search=yes, ai-train=no
+
 # Disallow private and administrative routes from search engine indexation
 Disallow: /admin
 Disallow: /admin/

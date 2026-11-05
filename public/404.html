@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>404 — Page Not Found | EveryGyan</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="description" content="The requested page could not be found on EveryGyan. Return to our knowledge base and homepage." />
+    <link rel="icon" href="/favicon.ico" sizes="48x48 32x32 16x16" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      :root {
+        --color-bg: #f8fafc;
+        --color-card: #ffffff;
+        --color-primary: #dc2626;
+        --color-primary-hover: #b91c1c;
+        --color-text-main: #0f172a;
+        --color-text-muted: #64748b;
+        --color-border: #e2e8f0;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background-color: var(--color-bg);
+        color: var(--color-text-main);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        line-height: 1.6;
+      }
+      .card {
+        background: var(--color-card);
+        border: 1px solid var(--color-border);
+        border-radius: 24px;
+        max-width: 540px;
+        width: 100%;
+        padding: 48px 36px;
+        text-align: center;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 900;
+        font-size: 20px;
+        color: var(--color-text-main);
+        text-decoration: none;
+        margin-bottom: 24px;
+      }
+      .brand span {
+        color: var(--color-primary);
+      }
+      .code-badge {
+        display: inline-block;
+        font-size: 72px;
+        font-weight: 900;
+        letter-spacing: -2px;
+        color: var(--color-primary);
+        line-height: 1;
+        margin-bottom: 12px;
+      }
+      h1 {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--color-text-main);
+        letter-spacing: -0.5px;
+        margin-bottom: 12px;
+      }
+      p {
+        font-size: 14px;
+        color: var(--color-text-muted);
+        margin-bottom: 28px;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      @media (min-width: 480px) {
+        .actions {
+          flex-direction: row;
+          justify-content: center;
+        }
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 24px;
+        border-radius: 14px;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+      }
+      .btn-primary {
+        background-color: var(--color-primary);
+        color: #ffffff;
+        box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.3);
+      }
+      .btn-primary:hover {
+        background-color: var(--color-primary-hover);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid var(--color-border);
+      }
+      .btn-secondary:hover {
+        background-color: #e2e8f0;
+      }
+      .footer-note {
+        margin-top: 24px;
+        font-size: 11px;
+        color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="main">
+      <a href="/" class="brand">Every<span>Gyan</span></a>
+      <div class="code-badge" aria-hidden="true">404</div>
+      <h1>Page Not Found</h1>
+      <p>
+        The publication, article, or resource you requested does not exist or may have been moved.
+        AI tools & automated agents: this response intentionally confirms an HTTP 404 status.
+      </p>
+      <div class="actions">
+        <a href="/" class="btn btn-primary">Return to Homepage</a>
+        <a href="/contact" class="btn btn-secondary">Contact Us</a>
+      </div>
+      <div class="footer-note">
+        EveryGyan — Knowledge for Everyone, Everywhere
+      </div>
+    </div>
+  </body>
+</html>

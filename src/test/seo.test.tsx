@@ -165,6 +165,32 @@ describe('Sitemap & Robots Directives Compliance', () => {
     expect(robotsContent).toContain('Disallow: /search');
     expect(robotsContent).toContain('Disallow: /reset-password');
     expect(robotsContent).toContain('Disallow: /unsubscribe');
+    expect(robotsContent).toContain('Content-Signal: search=yes, ai-train=no');
     expect(robotsContent).toContain('Sitemap: https://everygyan.com/sitemap.xml');
+  });
+
+  it('verifies public/404.html exists with proper HTTP 404 meta tags and branding', () => {
+    const notFoundPath = path.resolve(process.cwd(), 'public', '404.html');
+    expect(fs.existsSync(notFoundPath)).toBe(true);
+
+    const content = fs.readFileSync(notFoundPath, 'utf8');
+    expect(content).toContain('404');
+    expect(content).toContain('Page Not Found');
+    expect(content).toContain('robots');
+    expect(content).toContain('noindex, nofollow');
+  });
+
+  it('verifies initial index.html contains rich, non-empty semantic content readable without JavaScript', () => {
+    const indexPath = path.resolve(process.cwd(), 'index.html');
+    expect(fs.existsSync(indexPath)).toBe(true);
+
+    const htmlContent = fs.readFileSync(indexPath, 'utf8');
+    expect(htmlContent).toContain('EveryGyan');
+    expect(htmlContent).toContain('Knowledge for Everyone, Everywhere');
+    expect(htmlContent).toContain('Featured Stories & Editorial Deep Dives');
+    expect(htmlContent).toContain('10 Amazing Places to Visit in Europe with Family');
+    expect(htmlContent).toContain('<noscript>');
+    // Ensure raw HTML has substantial text for AI agents and search crawlers
+    expect(htmlContent.length).toBeGreaterThan(1500);
   });
 });

@@ -1,3 +1,10 @@
+# =============================================================
+# EveryGyan Production Apache Configuration (.htaccess)
+# =============================================================
+
+# Real 404 Error Document for missing URLs
+ErrorDocument 404 /404.html
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
@@ -8,11 +15,21 @@
   RewriteCond %{HTTP_HOST} ^www\.everygyan\.com$ [NC]
   RewriteRule ^(.*)$ https://everygyan.com/$1 [L,R=301]
 
+  # Allow direct access to index.html and 404.html
   RewriteRule ^index\.html$ - [L]
+  RewriteRule ^404\.html$ - [L]
+
+  # Route valid Single Page Application (SPA) routes to index.html
+  RewriteCond %{REQUEST_URI} ^/(article|category|tag|about|deals|contact|privacy|terms|search|reset-password|newsletter|unsubscribe|dashboard|admin)(/.*)?$ [NC,OR]
+  RewriteCond %{REQUEST_URI} ^/?$
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteCond %{REQUEST_FILENAME} !-l
   RewriteRule . /index.html [L]
+
+  # All other missing resources and non-existent URLs return real HTTP 404
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^.*$ /404.html [R=404,L]
 </IfModule>
 
 # Gzip & Deflate Compression
@@ -44,21 +61,28 @@
   ExpiresByType application/manifest+json "access plus 1 week"
 </IfModule>
 
-# Production Security Headers
+# Production Security & AI Content-Signal Headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"
   Header set X-XSS-Protection "1; mode=block"
   Header set Referrer-Policy "strict-origin-when-cross-origin"
+  # Declare content permissions to AI agents & crawlers via HTTP headers
+  Header set Content-Signal "search=yes, ai-train=no"
 </IfModule>
 
-# Allow public manifest and robots
+# Allow public manifest, robots, and 404 page
 <Files "site.webmanifest">
   <IfModule mod_authz_core.c>
     Require all granted
   </IfModule>
 </Files>
 <Files "robots.txt">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+</Files>
+<Files "404.html">
   <IfModule mod_authz_core.c>
     Require all granted
   </IfModule>
