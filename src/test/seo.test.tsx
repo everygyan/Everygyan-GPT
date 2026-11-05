@@ -194,7 +194,9 @@ describe('Sitemap & Robots Directives Compliance', () => {
     expect(htmlContent).toContain('+1-800-555-0199');
     expect(htmlContent).toContain('contact@everygyan.com');
     expect(htmlContent).toContain('sameAs');
+    expect(htmlContent).toContain('"@type": "Organization"');
     expect(htmlContent).toContain('NewsMediaOrganization');
+    expect(htmlContent).toContain('PostalAddress');
     expect(htmlContent).toContain('FAQPage');
     expect(htmlContent).toContain('ItemList');
     expect(htmlContent).toContain('<noscript>');

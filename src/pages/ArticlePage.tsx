@@ -98,7 +98,8 @@ export const ArticlePage: React.FC = () => {
               name: article.author.name,
             },
             publisher: {
-              '@type': 'NewsMediaOrganization',
+              '@type': 'Organization',
+              additionalType: 'https://schema.org/NewsMediaOrganization',
               name: 'EveryGyan',
               url: SITE_URL,
               logo: {

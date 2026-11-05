@@ -64,7 +64,8 @@ export const HomePage: React.FC = () => {
           },
           {
             '@context': 'https://schema.org',
-            '@type': 'NewsMediaOrganization',
+            '@type': 'Organization',
+            additionalType: 'https://schema.org/NewsMediaOrganization',
             name: 'EveryGyan',
             url: SITE_URL,
             logo: `${SITE_URL}/favicon.svg`,
