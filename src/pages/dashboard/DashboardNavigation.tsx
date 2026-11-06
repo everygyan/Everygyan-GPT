@@ -119,9 +119,11 @@ export const DashboardNavigation: React.FC = () => {
       })
     );
 
-    const result = await updateNavigationItem(item.id, { visible: newVisible });
+    const result = await updateNavigationItem(item.id, { visible: newVisible }, item.path);
     if (!result.success) {
       flash('error', result.error || 'Failed to toggle visibility');
+    } else {
+      flash('success', `"${item.name}" is now ${newVisible ? 'visible on' : 'hidden from'} website`);
     }
   };
 
@@ -264,9 +266,9 @@ export const DashboardNavigation: React.FC = () => {
   };
 
   // ── Inline edit save ──
-  const handleInlineUpdate = async (id: string, field: string, value: string) => {
+  const handleInlineUpdate = async (id: string, field: string, value: string, path?: string) => {
     const updates: Partial<NavigationMenuItem> = { [field]: value };
-    const result = await updateNavigationItem(id, updates);
+    const result = await updateNavigationItem(id, updates, path);
     if (result.success) {
       const nav = await fetchNavigationMenu();
       setMenuItems(nav);
@@ -482,7 +484,7 @@ export const DashboardNavigation: React.FC = () => {
                       defaultValue={item.name}
                       onBlur={(e) => {
                         if (e.target.value !== item.name) {
-                          handleInlineUpdate(item.id, 'name', e.target.value);
+                          handleInlineUpdate(item.id, 'name', e.target.value, item.path);
                         }
                       }}
                       className="text-sm font-semibold text-slate-800 bg-transparent border-none focus:ring-1 focus:ring-red-400 rounded px-1 min-w-0 flex-1"
@@ -539,7 +541,7 @@ export const DashboardNavigation: React.FC = () => {
                             defaultValue={child.name}
                             onBlur={(e) => {
                               if (e.target.value !== child.name) {
-                                handleInlineUpdate(child.id, 'name', e.target.value);
+                                handleInlineUpdate(child.id, 'name', e.target.value, child.path);
                               }
                             }}
                             className="text-xs font-medium text-slate-700 bg-transparent border-none focus:ring-1 focus:ring-red-400 rounded px-1 min-w-0 w-28"

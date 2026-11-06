@@ -24,16 +24,37 @@ export const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
 
-  // Load navigation dynamically from Supabase (falls back to DEFAULT_NAVIGATION)
+  // Load navigation dynamically from Supabase & local cache (falls back to DEFAULT_NAVIGATION)
   useEffect(() => {
     let isMounted = true;
-    fetchNavigationMenu().then((items) => {
-      if (isMounted && items && items.length > 0) {
-        setNavItems(items);
+
+    const loadMenu = () => {
+      fetchNavigationMenu().then((items) => {
+        if (isMounted && items && items.length > 0) {
+          setNavItems(items);
+        }
+      });
+    };
+
+    loadMenu();
+
+    const handleNavUpdate = () => {
+      loadMenu();
+    };
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'everygyan_navigation_overrides' || e.key === 'everygyan_navigation_tree') {
+        loadMenu();
       }
-    });
+    };
+
+    window.addEventListener('everygyan:navigation-updated', handleNavUpdate);
+    window.addEventListener('storage', handleStorage);
+
     return () => {
       isMounted = false;
+      window.removeEventListener('everygyan:navigation-updated', handleNavUpdate);
+      window.removeEventListener('storage', handleStorage);
     };
   }, []);
 

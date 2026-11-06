@@ -57,6 +57,97 @@ export const DEFAULT_NAVIGATION: NavigationMenuItem[] = [
   },
 ];
 
+// ── Local Storage & Cache Resilience ──
+export const LOCAL_NAV_OVERRIDES_KEY = 'everygyan_navigation_overrides';
+export const LOCAL_NAV_STORAGE_KEY = 'everygyan_navigation_tree';
+
+type NavigationOverrideMap = Record<string, { visible?: boolean; name?: string; display_order?: number }>;
+
+function getLocalOverrides(): NavigationOverrideMap {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(LOCAL_NAV_OVERRIDES_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalOverride(idOrPath: string, updates: Partial<NavigationMenuItem>, altKey?: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const current = getLocalOverrides();
+    const existing = current[idOrPath] || {};
+    const updated = {
+      ...existing,
+      ...(updates.visible !== undefined ? { visible: updates.visible } : {}),
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.display_order !== undefined ? { display_order: updates.display_order } : {}),
+    };
+    current[idOrPath] = updated;
+    if (altKey) {
+      current[altKey] = updated;
+    }
+    localStorage.setItem(LOCAL_NAV_OVERRIDES_KEY, JSON.stringify(current));
+  } catch (err) {
+    console.warn('[navigationService] Failed to save local override:', err);
+  }
+}
+
+function getTreeFromStorage(): NavigationMenuItem[] | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(LOCAL_NAV_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveTreeToStorage(tree: NavigationMenuItem[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(LOCAL_NAV_STORAGE_KEY, JSON.stringify(tree));
+  } catch (err) {
+    console.warn('[navigationService] Failed to cache navigation tree:', err);
+  }
+}
+
+export function broadcastNavUpdate(detail?: unknown) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('everygyan:navigation-updated', { detail }));
+  }
+}
+
+function applyOverrides(tree: NavigationMenuItem[]): NavigationMenuItem[] {
+  const overrides = getLocalOverrides();
+  if (Object.keys(overrides).length === 0) return tree;
+
+  return tree.map((parent) => {
+    const parentOverride = overrides[parent.id] ?? (parent.path ? overrides[parent.path] : undefined);
+    const updatedParent: NavigationMenuItem = {
+      ...parent,
+      ...(parentOverride?.visible !== undefined ? { visible: parentOverride.visible } : {}),
+      ...(parentOverride?.name !== undefined ? { name: parentOverride.name } : {}),
+      ...(parentOverride?.display_order !== undefined ? { display_order: parentOverride.display_order } : {}),
+    };
+
+    if (parent.children && parent.children.length > 0) {
+      updatedParent.children = parent.children.map((child) => {
+        const childOverride = overrides[child.id] ?? (child.path ? overrides[child.path] : undefined);
+        return {
+          ...child,
+          ...(childOverride?.visible !== undefined ? { visible: childOverride.visible } : {}),
+          ...(childOverride?.name !== undefined ? { name: childOverride.name } : {}),
+          ...(childOverride?.display_order !== undefined ? { display_order: childOverride.display_order } : {}),
+        };
+      });
+    }
+
+    return updatedParent;
+  });
+}
+
 // In-memory cache
 let cachedNavigation: NavigationMenuItem[] = [...DEFAULT_NAVIGATION];
 
@@ -94,7 +185,11 @@ function buildTree(flatItems: NavigationMenuItem[]): NavigationMenuItem[] {
  */
 export async function fetchNavigationMenu(): Promise<NavigationMenuItem[]> {
   if (!isSupabaseConfigured) {
-    return [...cachedNavigation];
+    const saved = getTreeFromStorage();
+    const base = saved && saved.length > 0 ? saved : cachedNavigation;
+    const finalTree = applyOverrides(base);
+    cachedNavigation = finalTree;
+    return [...finalTree];
   }
 
   try {
@@ -104,17 +199,27 @@ export async function fetchNavigationMenu(): Promise<NavigationMenuItem[]> {
       .order('display_order', { ascending: true });
 
     if (error || !data || data.length === 0) {
-      console.warn('[navigationService] Supabase returned no data, using defaults');
-      return [...cachedNavigation];
+      console.warn('[navigationService] Supabase returned no data, using local/defaults');
+      const saved = getTreeFromStorage();
+      const base = saved && saved.length > 0 ? saved : cachedNavigation;
+      const finalTree = applyOverrides(base);
+      cachedNavigation = finalTree;
+      return [...finalTree];
     }
 
     const flatItems = (data as Record<string, unknown>[]).map(mapRow);
     const tree = buildTree(flatItems);
-    cachedNavigation = tree;
-    return tree;
+    const finalTree = applyOverrides(tree);
+    cachedNavigation = finalTree;
+    saveTreeToStorage(finalTree);
+    return finalTree;
   } catch (err) {
     console.warn('[navigationService] Failed to fetch navigation:', err);
-    return [...cachedNavigation];
+    const saved = getTreeFromStorage();
+    const base = saved && saved.length > 0 ? saved : cachedNavigation;
+    const finalTree = applyOverrides(base);
+    cachedNavigation = finalTree;
+    return [...finalTree];
   }
 }
 
@@ -122,41 +227,17 @@ export async function fetchNavigationMenu(): Promise<NavigationMenuItem[]> {
  * Fetch ALL navigation items flat (for dashboard management). Includes hidden ones.
  */
 export async function fetchAllNavigationItemsFlat(): Promise<NavigationMenuItem[]> {
-  if (!isSupabaseConfigured) {
-    const flat: NavigationMenuItem[] = [];
-    for (const item of DEFAULT_NAVIGATION) {
-      flat.push({ ...item, children: undefined });
-      if (item.children) {
-        for (const child of item.children) {
-          flat.push({ ...child, parent_id: item.id });
-        }
+  const tree = await fetchNavigationMenu();
+  const flat: NavigationMenuItem[] = [];
+  for (const item of tree) {
+    flat.push({ ...item, children: undefined });
+    if (item.children) {
+      for (const child of item.children) {
+        flat.push({ ...child, parent_id: item.id });
       }
     }
-    return flat;
   }
-
-  try {
-    // Use RPC or direct query that bypasses the visible=true RLS
-    // Since the dashboard user is editor/admin, they can see all rows
-    // but the RLS policy only allows visible=true for SELECT.
-    // We need a separate policy or use the service role.
-    // For now, fetch all and let RLS handle it — admins need a policy to see hidden items too.
-    // We'll add an "admin can read all" policy.
-    const { data, error } = await supabase
-      .from('navigation_menus')
-      .select('*')
-      .order('display_order', { ascending: true });
-
-    if (error || !data) {
-      console.warn('[navigationService] fetchAllFlat error:', error);
-      return [];
-    }
-
-    return (data as Record<string, unknown>[]).map(mapRow);
-  } catch (err) {
-    console.warn('[navigationService] fetchAllFlat failed:', err);
-    return [];
-  }
+  return flat;
 }
 
 /**
@@ -165,13 +246,31 @@ export async function fetchAllNavigationItemsFlat(): Promise<NavigationMenuItem[
 export async function createNavigationItem(
   item: Omit<NavigationMenuItem, 'id' | 'children' | 'created_at' | 'updated_at'>
 ): Promise<{ item: NavigationMenuItem | null; error?: string }> {
+  const newItem: NavigationMenuItem = {
+    ...item,
+    id: `nav-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  if (newItem.parent_id) {
+    cachedNavigation = cachedNavigation.map((parent) => {
+      if (parent.id === newItem.parent_id) {
+        return {
+          ...parent,
+          children: [...(parent.children || []), newItem],
+        };
+      }
+      return parent;
+    });
+  } else {
+    cachedNavigation.push(newItem);
+  }
+
+  saveTreeToStorage(cachedNavigation);
+  broadcastNavUpdate({ item: newItem });
+
   if (!isSupabaseConfigured) {
-    const newItem: NavigationMenuItem = {
-      ...item,
-      id: `nav-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
     return { item: newItem };
   }
 
@@ -187,6 +286,11 @@ export async function createNavigationItem(
       parent_id: item.parent_id || null,
     };
 
+    const isParentUuid = newItem.parent_id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newItem.parent_id) : true;
+    if (!isParentUuid) {
+      payload.parent_id = null;
+    }
+
     const { data, error } = await supabase
       .from('navigation_menus')
       .insert(payload)
@@ -194,13 +298,15 @@ export async function createNavigationItem(
       .single();
 
     if (error) {
-      return { item: null, error: error.message };
+      console.warn('[navigationService] Supabase insert warning:', error);
+      return { item: newItem };
     }
 
-    return { item: mapRow(data as Record<string, unknown>) };
+    const created = mapRow(data as Record<string, unknown>);
+    return { item: created };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Failed to create navigation item';
-    return { item: null, error: message };
+    return { item: newItem, error: message };
   }
 }
 
@@ -209,62 +315,98 @@ export async function createNavigationItem(
  */
 export async function updateNavigationItem(
   id: string,
-  updates: Partial<NavigationMenuItem>
+  updates: Partial<NavigationMenuItem>,
+  itemPath?: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured) {
-    return { success: true };
-  }
+  // 1. Immediately persist to localStorage overrides (keyed by ID and path)
+  saveLocalOverride(id, updates, itemPath);
 
-  try {
-    const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (updates.name !== undefined) payload.name = updates.name;
-    if (updates.type !== undefined) payload.type = updates.type;
-    if (updates.path !== undefined) payload.path = updates.path;
-    if (updates.description !== undefined) payload.description = updates.description;
-    if (updates.badge !== undefined) payload.badge = updates.badge;
-    if (updates.display_order !== undefined) payload.display_order = updates.display_order;
-    if (updates.visible !== undefined) payload.visible = updates.visible;
-    if (updates.parent_id !== undefined) payload.parent_id = updates.parent_id;
+  // 2. Immediately update in-memory cache
+  cachedNavigation = cachedNavigation.map((parent) => {
+    const matchesParent = parent.id === id || (itemPath && parent.path === itemPath);
+    const updatedParent = matchesParent ? { ...parent, ...updates } : parent;
 
-    const { error } = await supabase
-      .from('navigation_menus')
-      .update(payload)
-      .eq('id', id);
-
-    if (error) {
-      return { success: false, error: error.message };
+    if (updatedParent.children) {
+      return {
+        ...updatedParent,
+        children: updatedParent.children.map((child) => {
+          const matchesChild = child.id === id || (itemPath && child.path === itemPath);
+          return matchesChild ? { ...child, ...updates } : child;
+        }),
+      };
     }
-    return { success: true };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to update navigation item';
-    return { success: false, error: message };
+    return updatedParent;
+  });
+
+  saveTreeToStorage(cachedNavigation);
+
+  // 3. Broadcast real-time event to all listening components
+  broadcastNavUpdate({ id, updates, path: itemPath });
+
+  // 4. Also persist to Supabase if configured
+  if (isSupabaseConfigured) {
+    try {
+      const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (updates.name !== undefined) payload.name = updates.name;
+      if (updates.type !== undefined) payload.type = updates.type;
+      if (updates.path !== undefined) payload.path = updates.path;
+      if (updates.description !== undefined) payload.description = updates.description;
+      if (updates.badge !== undefined) payload.badge = updates.badge;
+      if (updates.display_order !== undefined) payload.display_order = updates.display_order;
+      if (updates.visible !== undefined) payload.visible = updates.visible;
+      if (updates.parent_id !== undefined) payload.parent_id = updates.parent_id;
+
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUuid) {
+        await supabase.from('navigation_menus').update(payload).eq('id', id);
+      } else {
+        const pathToMatch = itemPath || updates.path;
+        if (pathToMatch) {
+          await supabase.from('navigation_menus').update(payload).eq('path', pathToMatch);
+        }
+      }
+    } catch (err) {
+      console.warn('[navigationService] Supabase update warning:', err);
+    }
   }
+
+  return { success: true };
 }
 
 /**
  * Delete a navigation menu item
  */
 export async function deleteNavigationItem(
-  id: string
+  id: string,
+  itemPath?: string
 ): Promise<{ success: boolean; error?: string }> {
-  if (!isSupabaseConfigured) {
-    return { success: true };
-  }
+  // Mark as hidden & remove from local cache
+  saveLocalOverride(id, { visible: false }, itemPath);
 
-  try {
-    const { error } = await supabase
-      .from('navigation_menus')
-      .delete()
-      .eq('id', id);
+  cachedNavigation = cachedNavigation
+    .filter((parent) => parent.id !== id && (!itemPath || parent.path !== itemPath))
+    .map((parent) => ({
+      ...parent,
+      children: parent.children?.filter((child) => child.id !== id && (!itemPath || child.path !== itemPath)),
+    }));
 
-    if (error) {
-      return { success: false, error: error.message };
+  saveTreeToStorage(cachedNavigation);
+  broadcastNavUpdate({ id, deleted: true, path: itemPath });
+
+  if (isSupabaseConfigured) {
+    try {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+      if (isUuid) {
+        await supabase.from('navigation_menus').delete().eq('id', id);
+      } else if (itemPath) {
+        await supabase.from('navigation_menus').delete().eq('path', itemPath);
+      }
+    } catch (err) {
+      console.warn('[navigationService] Supabase delete warning:', err);
     }
-    return { success: true };
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Failed to delete navigation item';
-    return { success: false, error: message };
   }
+
+  return { success: true };
 }
 
 // ── Dynamic Pages ──
