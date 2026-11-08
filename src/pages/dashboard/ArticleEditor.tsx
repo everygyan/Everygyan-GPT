@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Save,
@@ -41,8 +41,18 @@ import { renderMarkdownBlocks } from '../../utils/markdownRenderer';
 
 export const ArticleEditor: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, profile, role } = useAuth();
+
+  const targetCategoryParam = searchParams.get('category');
+  const initialCategoryMatch = targetCategoryParam
+    ? CATEGORIES.find(
+        (c) =>
+          c.slug.toLowerCase() === targetCategoryParam.toLowerCase() ||
+          c.name.toLowerCase() === targetCategoryParam.toLowerCase()
+      )
+    : null;
 
   // Form State
   const [title, setTitle] = useState('');
@@ -51,8 +61,8 @@ export const ArticleEditor: React.FC = () => {
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
   const [availableCategories, setAvailableCategories] = useState<{ id: string; name: string; slug: string; displayName?: string }[]>(CATEGORIES);
-  const [category, setCategory] = useState(CATEGORIES[0].name);
-  const [categorySlug, setCategorySlug] = useState(CATEGORIES[0].slug);
+  const [category, setCategory] = useState(initialCategoryMatch ? initialCategoryMatch.name : CATEGORIES[0].name);
+  const [categorySlug, setCategorySlug] = useState(initialCategoryMatch ? initialCategoryMatch.slug : CATEGORIES[0].slug);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [coverImage, setCoverImage] = useState('');
@@ -175,7 +185,24 @@ export const ArticleEditor: React.FC = () => {
         });
       });
 
-      setAvailableCategories(Array.from(catMap.values()));
+      const allCategoryOptions = Array.from(catMap.values());
+      setAvailableCategories(allCategoryOptions);
+
+      // Pre-select category if passed in URL query and creating a new article
+      if (targetCategoryParam && (!id || id === 'new')) {
+        const found = allCategoryOptions.find(
+          (c) =>
+            c.slug.toLowerCase() === targetCategoryParam.toLowerCase() ||
+            c.name.toLowerCase() === targetCategoryParam.toLowerCase() ||
+            (c.displayName && c.displayName.toLowerCase() === targetCategoryParam.toLowerCase()) ||
+            c.slug.toLowerCase().endsWith(`/${targetCategoryParam.toLowerCase()}`) ||
+            c.slug.toLowerCase().endsWith(`-${targetCategoryParam.toLowerCase()}`)
+        );
+        if (found) {
+          setCategory(found.name);
+          setCategorySlug(found.slug);
+        }
+      }
     });
 
     return () => {
