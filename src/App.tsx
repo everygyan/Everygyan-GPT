@@ -217,7 +217,7 @@ const AppContent: React.FC = () => {
                 <Route path="a2" element={<A2Dashboard />} />
                 <Route path="b1" element={<B1Dashboard />} />
               </Route>
-              <Route path="/category/:slug" element={<CategoryPage />} />
+              <Route path="/category/*" element={<CategoryPage />} />
               <Route path="/tag/:slug" element={<TagPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/about" element={<AboutPage />} />

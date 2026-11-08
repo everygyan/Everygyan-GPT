@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Plus, Trash2, Eye, EyeOff, Save, ChevronDown, ChevronRight,
-  GripVertical, AlertCircle, Check, FolderPlus, Link2, Layers,
+  GripVertical, AlertCircle, Check, FolderPlus, Link2, Layers, CornerDownRight,
 } from 'lucide-react';
 import { NavigationMenuItem, DynamicPage } from '../../types';
 import {
@@ -12,6 +12,8 @@ import {
   fetchDynamicPages,
   createDynamicPage,
   deleteDynamicPage,
+  getSelectableParents,
+  findNodeInTree,
 } from '../../services/navigationService';
 
 type ActiveTab = 'menu' | 'pages';
@@ -80,6 +82,8 @@ export const DashboardNavigation: React.FC = () => {
     setTimeout(() => setFeedback(null), 4000);
   }, []);
 
+  const selectableParents = useMemo(() => getSelectableParents(menuItems), [menuItems]);
+
   // ── Load data ──
   useEffect(() => {
     async function load() {
@@ -91,6 +95,19 @@ export const DashboardNavigation: React.FC = () => {
         ]);
         setMenuItems(nav);
         setPages(pg);
+
+        // Expand all parents by default so all hierarchy levels are visible
+        const expandMap: Record<string, boolean> = {};
+        const initExpanded = (items: NavigationMenuItem[]) => {
+          items.forEach((item) => {
+            if (item.children && item.children.length > 0) {
+              expandMap[item.id] = true;
+              initExpanded(item.children);
+            }
+          });
+        };
+        initExpanded(nav);
+        setExpandedParents(expandMap);
       } catch {
         flash('error', 'Failed to load navigation data');
       } finally {
@@ -103,21 +120,21 @@ export const DashboardNavigation: React.FC = () => {
   // ── Toggle visibility ──
   const handleToggleVisibility = async (item: NavigationMenuItem) => {
     const newVisible = !item.visible;
-    // Optimistic update
-    setMenuItems((prev) =>
-      prev.map((parent) => {
-        if (parent.id === item.id) return { ...parent, visible: newVisible };
-        if (parent.children) {
+    // Recursive optimistic update
+    const updateVisibilityRecursive = (nodes: NavigationMenuItem[]): NavigationMenuItem[] => {
+      return nodes.map((node) => {
+        const isTarget = node.id === item.id;
+        const updatedNode = isTarget ? { ...node, visible: newVisible } : node;
+        if (updatedNode.children) {
           return {
-            ...parent,
-            children: parent.children.map((child) =>
-              child.id === item.id ? { ...child, visible: newVisible } : child
-            ),
+            ...updatedNode,
+            children: updateVisibilityRecursive(updatedNode.children),
           };
         }
-        return parent;
-      })
-    );
+        return updatedNode;
+      });
+    };
+    setMenuItems((prev) => updateVisibilityRecursive(prev));
 
     const result = await updateNavigationItem(item.id, { visible: newVisible }, item.path);
     if (!result.success) {
@@ -134,14 +151,15 @@ export const DashboardNavigation: React.FC = () => {
     setSaving(true);
     const result = await deleteNavigationItem(id);
     if (result.success) {
-      setMenuItems((prev) =>
-        prev
-          .filter((item) => item.id !== id)
-          .map((item) => ({
-            ...item,
-            children: item.children?.filter((child) => child.id !== id),
-          }))
-      );
+      const deleteRecursive = (nodes: NavigationMenuItem[]): NavigationMenuItem[] => {
+        return nodes
+          .filter((node) => node.id !== id)
+          .map((node) => ({
+            ...node,
+            children: node.children ? deleteRecursive(node.children) : undefined,
+          }));
+      };
+      setMenuItems((prev) => deleteRecursive(prev));
       flash('success', `"${name}" deleted`);
     } else {
       flash('error', result.error || 'Failed to delete item');
@@ -161,7 +179,7 @@ export const DashboardNavigation: React.FC = () => {
     // Calculate display_order
     let displayOrder = 10;
     if (newItem.parent_id) {
-      const parent = menuItems.find((m) => m.id === newItem.parent_id);
+      const parent = findNodeInTree(menuItems, newItem.parent_id);
       displayOrder = (parent?.children?.length || 0) + 1;
     } else {
       displayOrder = (menuItems.length + 1) * 10;
@@ -221,7 +239,7 @@ export const DashboardNavigation: React.FC = () => {
     if (newPage.addToMenu) {
       let displayOrder = 10;
       if (newPage.parentMenuId) {
-        const parent = menuItems.find((m) => m.id === newPage.parentMenuId);
+        const parent = findNodeInTree(menuItems, newPage.parentMenuId);
         displayOrder = (parent?.children?.length || 0) + 1;
       } else {
         displayOrder = (menuItems.length + 1) * 10;
@@ -364,9 +382,29 @@ export const DashboardNavigation: React.FC = () => {
                   <input
                     type="text"
                     value={newItem.name}
-                    onChange={(e) => setNewItem((p) => ({ ...p, name: e.target.value }))}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewItem((p) => {
+                        let newPath = p.path;
+                        if (!p.path || p.path.startsWith('/category/')) {
+                          const slugVal = val.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                          if (p.parent_id) {
+                            const parent = findNodeInTree(menuItems, p.parent_id);
+                            if (parent) {
+                              const parentSlug = parent.path.replace(/^\/category\//, '').replace(/^\/+|\/+$/g, '');
+                              newPath = slugVal ? `/category/${parentSlug}/${slugVal}` : `/category/${parentSlug}`;
+                            } else {
+                              newPath = slugVal ? `/category/${slugVal}` : '';
+                            }
+                          } else {
+                            newPath = slugVal ? `/category/${slugVal}` : '';
+                          }
+                        }
+                        return { ...p, name: val, path: newPath };
+                      });
+                    }}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="e.g. Sports"
+                    placeholder="e.g. Japan"
                   />
                 </div>
                 <div>
@@ -376,7 +414,7 @@ export const DashboardNavigation: React.FC = () => {
                     value={newItem.path}
                     onChange={(e) => setNewItem((p) => ({ ...p, path: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="/category/sports"
+                    placeholder="/category/travel-asia/japan"
                   />
                 </div>
                 <div>
@@ -391,20 +429,30 @@ export const DashboardNavigation: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Parent</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Parent Category</label>
                   <select
                     value={newItem.parent_id}
-                    onChange={(e) => setNewItem((p) => ({ ...p, parent_id: e.target.value }))}
+                    onChange={(e) => {
+                      const selectedId = e.target.value;
+                      let newPath = newItem.path;
+                      if (selectedId) {
+                        const parent = findNodeInTree(menuItems, selectedId);
+                        if (parent && (!newItem.path || newItem.path.startsWith('/category/'))) {
+                          const parentSlug = parent.path.replace(/^\/category\//, '').replace(/^\/+|\/+$/g, '');
+                          const currentNameSlug = newItem.name ? newItem.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+                          newPath = currentNameSlug ? `/category/${parentSlug}/${currentNameSlug}` : `/category/${parentSlug}`;
+                        }
+                      }
+                      setNewItem((p) => ({ ...p, parent_id: selectedId, path: newPath }));
+                    }}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">— Top Level —</option>
-                    {menuItems
-                      .filter((m) => m.type === 'dropdown')
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
+                    <option value="">— Top Level (Main Bar) —</option>
+                    {selectableParents.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.depth === 0 ? m.name : `  └─ ${m.lineage}`}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -528,53 +576,130 @@ export const DashboardNavigation: React.FC = () => {
 
                   {/* Children rows */}
                   {isExpanded && hasChildren && (
-                    <div className="bg-slate-50/50">
-                      {item.children!.map((child) => (
-                        <div
-                          key={child.id}
-                          className="flex items-center gap-3 px-4 py-2.5 pl-16 hover:bg-slate-100/80 transition-colors border-t border-slate-100"
-                        >
-                          <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
-                          <StatusDot active={child.visible} />
+                    <div className="bg-slate-50/50 divide-y divide-slate-100">
+                      {item.children!.map((child) => {
+                        const childHasGrandchildren = child.children && child.children.length > 0;
+                        const isChildExpanded = Boolean(expandedParents[child.id]);
 
-                          <input
-                            defaultValue={child.name}
-                            onBlur={(e) => {
-                              if (e.target.value !== child.name) {
-                                handleInlineUpdate(child.id, 'name', e.target.value, child.path);
-                              }
-                            }}
-                            className="text-xs font-medium text-slate-700 bg-transparent border-none focus:ring-1 focus:ring-red-400 rounded px-1 min-w-0 w-28"
-                          />
+                        return (
+                          <div key={child.id}>
+                            <div className="flex items-center gap-3 px-4 py-2.5 pl-14 hover:bg-slate-100/80 transition-colors">
+                              {childHasGrandchildren ? (
+                                <button
+                                  onClick={() =>
+                                    setExpandedParents((p) => ({ ...p, [child.id]: !p[child.id] }))
+                                  }
+                                  className="text-slate-400 hover:text-slate-600 flex-shrink-0"
+                                  title={isChildExpanded ? 'Collapse sub-pages' : 'Expand sub-pages'}
+                                >
+                                  {isChildExpanded ? (
+                                    <ChevronDown className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              ) : (
+                                <Link2 className="w-3.5 h-3.5 text-slate-300 flex-shrink-0" />
+                              )}
 
-                          <span className="hidden md:inline text-[11px] text-slate-400 truncate max-w-[200px]">
-                            {child.description}
-                          </span>
+                              <StatusDot active={child.visible} />
 
-                          <span className="hidden lg:inline text-[11px] text-slate-400 font-mono truncate max-w-[160px] ml-auto">
-                            {child.path}
-                          </span>
+                              <input
+                                defaultValue={child.name}
+                                onBlur={(e) => {
+                                  if (e.target.value !== child.name) {
+                                    handleInlineUpdate(child.id, 'name', e.target.value, child.path);
+                                  }
+                                }}
+                                className="text-xs font-semibold text-slate-700 bg-transparent border-none focus:ring-1 focus:ring-red-400 rounded px-1 min-w-0 w-28"
+                              />
 
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleToggleVisibility(child)}
-                              className={`p-1 rounded-lg transition-colors ${
-                                child.visible
-                                  ? 'text-emerald-600 hover:bg-emerald-50'
-                                  : 'text-slate-400 hover:bg-slate-100'
-                              }`}
-                            >
-                              {child.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMenuItem(child.id, child.name)}
-                              className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                              <span className="hidden md:inline text-[11px] text-slate-400 truncate max-w-[200px]">
+                                {child.description || (childHasGrandchildren ? `${child.children!.length} sub-items` : '')}
+                              </span>
+
+                              <span className="hidden lg:inline text-[11px] text-slate-400 font-mono truncate max-w-[160px] ml-auto">
+                                {child.path}
+                              </span>
+
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleToggleVisibility(child)}
+                                  className={`p-1 rounded-lg transition-colors ${
+                                    child.visible
+                                      ? 'text-emerald-600 hover:bg-emerald-50'
+                                      : 'text-slate-400 hover:bg-slate-100'
+                                  }`}
+                                  title={child.visible ? 'Visible — click to hide' : 'Hidden — click to show'}
+                                >
+                                  {child.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteMenuItem(child.id, child.name)}
+                                  className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Sub-children (Level 3, e.g. Travel > Asia > Japan) */}
+                            {childHasGrandchildren && isChildExpanded && (
+                              <div className="bg-slate-100/60 divide-y divide-slate-200/50">
+                                {child.children!.map((grandchild) => (
+                                  <div
+                                    key={grandchild.id}
+                                    className="flex items-center gap-3 px-4 py-2 pl-24 hover:bg-slate-200/50 transition-colors"
+                                  >
+                                    <CornerDownRight className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
+                                    <StatusDot active={grandchild.visible} />
+
+                                    <input
+                                      defaultValue={grandchild.name}
+                                      onBlur={(e) => {
+                                        if (e.target.value !== grandchild.name) {
+                                          handleInlineUpdate(grandchild.id, 'name', e.target.value, grandchild.path);
+                                        }
+                                      }}
+                                      className="text-xs font-semibold text-slate-800 bg-transparent border-none focus:ring-1 focus:ring-red-400 rounded px-1 min-w-0 w-32"
+                                    />
+
+                                    <span className="hidden md:inline text-[11px] text-slate-500 truncate max-w-[200px]">
+                                      {grandchild.description || 'Sub-page'}
+                                    </span>
+
+                                    <span className="hidden lg:inline text-[11px] text-slate-400 font-mono truncate max-w-[180px] ml-auto">
+                                      {grandchild.path}
+                                    </span>
+
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => handleToggleVisibility(grandchild)}
+                                        className={`p-1 rounded-lg transition-colors ${
+                                          grandchild.visible
+                                            ? 'text-emerald-600 hover:bg-emerald-50'
+                                            : 'text-slate-400 hover:bg-slate-100'
+                                        }`}
+                                        title={grandchild.visible ? 'Visible — click to hide' : 'Hidden — click to show'}
+                                      >
+                                        {grandchild.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteMenuItem(grandchild.id, grandchild.name)}
+                                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -675,14 +800,12 @@ export const DashboardNavigation: React.FC = () => {
                     onChange={(e) => setNewPage((p) => ({ ...p, parentMenuId: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">— Top Level —</option>
-                    {menuItems
-                      .filter((m) => m.type === 'dropdown')
-                      .map((m) => (
-                        <option key={m.id} value={m.id}>
-                          Under: {m.name}
-                        </option>
-                      ))}
+                    <option value="">— Top Level (Header Bar) —</option>
+                    {selectableParents.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.depth === 0 ? `Top Level: ${m.name}` : `Under: ${m.lineage}`}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

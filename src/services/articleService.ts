@@ -1,6 +1,7 @@
 import { Article } from '../types';
 import { SEED_ARTICLES } from '../data/seedData';
 import { supabase, isSupabaseConfigured } from './supabase';
+import { fetchNavigationMenu, findDescendantSlugs } from './navigationService';
 
 interface AuthorRow {
   id?: string;
@@ -222,19 +223,49 @@ export async function fetchArticlesByCategoryPaginated(
 ): Promise<PaginatedResult<Article>> {
   const all = await fetchAllPublicArticles();
   const normalized = categorySlug.toLowerCase().trim();
+  const normalizedLast = normalized.split('/').pop() || normalized;
+
+  // Retrieve current navigation tree to inspect descendant categories
+  let descendantSlugs: string[] = [];
+  try {
+    const navTree = await fetchNavigationMenu();
+    descendantSlugs = findDescendantSlugs(navTree, normalized);
+  } catch {
+    // If navigation tree fetch fails, continue with fallback prefix checks
+  }
 
   const filtered = all.filter((a) => {
-    const aSlug = a.category_slug.toLowerCase();
-    // 1. Exact match
-    if (aSlug === normalized) return true;
+    const aSlug = a.category_slug.toLowerCase().trim();
+    const aSlugLast = aSlug.split('/').pop() || aSlug;
 
-    // 2. Parent department match
+    // 1. Exact match (by full slug or last segment)
+    if (aSlug === normalized || aSlug === normalizedLast || aSlugLast === normalizedLast) return true;
+
+    // 2. Direct hierarchical prefix/suffix matches (e.g. travel-asia matches travel-asia-japan or travel-asia/japan)
+    if (aSlug.startsWith(normalized + '-') || aSlug.startsWith(normalized + '/')) return true;
+    if (aSlug.startsWith(normalizedLast + '-') || aSlug.startsWith(normalizedLast + '/')) return true;
+
+    // 3. Descendant category match from navigation tree (e.g. Asia includes Japan)
+    if (descendantSlugs.includes(aSlug) || descendantSlugs.includes(aSlugLast)) return true;
+
+    // 4. Tag match (e.g. article tagged with "Japan" matches Japan or Asia)
+    if (a.tags && Array.isArray(a.tags)) {
+      const lowerTags = a.tags.map((t) => t.toLowerCase());
+      if (lowerTags.includes(normalizedLast) || lowerTags.includes(normalized)) return true;
+      if (descendantSlugs.some((d) => lowerTags.includes(d))) return true;
+    }
+
+    // 5. Category title match
+    const aCatName = (a.category || '').toLowerCase();
+    if (aCatName === normalizedLast || descendantSlugs.includes(aCatName)) return true;
+
+    // 6. Parent department match
     if (normalized === 'travel' && (aSlug.startsWith('travel-') || aSlug === 'health')) return true;
     if (normalized === 'news' && (aSlug.startsWith('news-') || aSlug === 'latest-news')) return true;
     if (normalized === 'learn' && aSlug.startsWith('learn-')) return true;
     if (normalized === 'entertainment' && aSlug.startsWith('entertainment-')) return true;
 
-    // 3. Backward-compatible aliases
+    // 7. Backward-compatible aliases
     if (normalized === 'tech' && (aSlug === 'learn-ai' || aSlug === 'deals')) return true;
     if (normalized === 'learning' && (aSlug === 'learn-sap' || aSlug.startsWith('learn-'))) return true;
     if (normalized === 'sports' && aSlug === 'news-asia') return true;

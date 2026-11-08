@@ -2,19 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { fetchArticlesByCategoryPaginated, PaginatedResult } from '../services/articleService';
-import { fetchDynamicPages } from '../services/navigationService';
+import { fetchDynamicPages, fetchNavigationMenu } from '../services/navigationService';
 import { CATEGORIES } from '../data/seedData';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
 import { GamesHub } from '../components/games/GamesHub';
-import { Article, Category } from '../types';
+import { Article, Category, NavigationMenuItem } from '../types';
 import { SeoHead, SITE_URL } from '../components/common/SeoHead';
 
 export const CategoryPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams();
+  const slug = params['*'] || params.slug || '';
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<Category | null>(null);
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ name: string; path?: string }>>([]);
   const [paginatedData, setPaginatedData] = useState<PaginatedResult<Article>>({
     items: [],
     total: 0,
@@ -30,8 +32,12 @@ export const CategoryPage: React.FC = () => {
       setLoading(true);
       window.scrollTo(0, 0);
       try {
-        const normalizedSlug = slug.toLowerCase();
-        let cat = CATEGORIES.find((c) => c.slug.toLowerCase() === normalizedSlug) || null;
+        const normalizedSlug = slug.toLowerCase().replace(/^\/+|\/+$/g, '');
+        const lastSlugSegment = normalizedSlug.split('/').pop() || normalizedSlug;
+        let cat = CATEGORIES.find(
+          (c) => c.slug.toLowerCase() === normalizedSlug || c.slug.toLowerCase() === lastSlugSegment
+        ) || null;
+        let crumbs: Array<{ name: string; path?: string }> = [];
 
         if (!cat) {
           if (normalizedSlug === 'travel') {
@@ -87,28 +93,95 @@ export const CategoryPage: React.FC = () => {
           } else if (normalizedSlug === 'geopolitics') {
             cat = CATEGORIES.find((c) => c.slug === 'news-world') || null;
           } else {
-            // Check dynamically created pages from Supabase/admin dashboard
+            // Check navigation menu hierarchy (e.g. Travel > Asia > Japan)
             try {
-              const dynPages = await fetchDynamicPages();
-              const dyn = dynPages.find((p) => p.slug.toLowerCase() === normalizedSlug);
-              if (dyn) {
+              const navTree = await fetchNavigationMenu();
+              let matchedNav: NavigationMenuItem | null = null;
+              let navAncestors: Array<{ name: string; path: string }> = [];
+
+              const searchNav = (
+                nodes: NavigationMenuItem[],
+                ancestors: Array<{ name: string; path: string }> = []
+              ): boolean => {
+                for (const node of nodes) {
+                  const currentLineage = [...ancestors, { name: node.name, path: node.path }];
+                  let nodeSlug = '';
+                  if (node.path.startsWith('/category/')) {
+                    nodeSlug = node.path.replace('/category/', '').toLowerCase().replace(/^\/+|\/+$/g, '');
+                  } else {
+                    nodeSlug = node.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                  }
+                  const nodeLast = nodeSlug.split('/').pop() || nodeSlug;
+
+                  if (
+                    nodeSlug === normalizedSlug ||
+                    nodeLast === lastSlugSegment ||
+                    node.path.toLowerCase() === `/category/${normalizedSlug}` ||
+                    node.path.toLowerCase() === `/category/${lastSlugSegment}` ||
+                    node.name.toLowerCase() === normalizedSlug ||
+                    node.name.toLowerCase() === lastSlugSegment
+                  ) {
+                    matchedNav = node;
+                    navAncestors = currentLineage;
+                    return true;
+                  }
+
+                  if (node.children && node.children.length > 0) {
+                    if (searchNav(node.children, currentLineage)) return true;
+                  }
+                }
+                return false;
+              };
+
+              searchNav(navTree);
+
+              if (matchedNav) {
+                const navItem = matchedNav as NavigationMenuItem;
                 cat = {
-                  id: dyn.id,
-                  name: dyn.title,
-                  slug: dyn.slug,
-                  description: dyn.description || `Verified guides, articles and news in ${dyn.title} on EveryGyan.`,
-                  icon: dyn.icon || 'Folder',
-                  color: dyn.color || '#e11d48',
-                  badgeBg: 'bg-red-50',
-                  badgeText: 'text-red-700',
+                  id: navItem.id,
+                  name: navItem.name,
+                  slug: normalizedSlug,
+                  description:
+                    navItem.description ||
+                    `Verified articles, guides, and reporting in ${navItem.name} on EveryGyan.`,
+                  icon: 'Compass',
+                  color: '#e11d48',
+                  badgeBg: 'bg-rose-50',
+                  badgeText: 'text-rose-700',
                 };
+                crumbs = navAncestors;
               }
             } catch {
-              // Ignore and use fallback
+              // Ignore navigation lookup errors
+            }
+
+            // Check dynamically created pages from Supabase/admin dashboard
+            if (!cat) {
+              try {
+                const dynPages = await fetchDynamicPages();
+                const dyn = dynPages.find(
+                  (p) => p.slug.toLowerCase() === normalizedSlug || p.slug.toLowerCase() === lastSlugSegment
+                );
+                if (dyn) {
+                  cat = {
+                    id: dyn.id,
+                    name: dyn.title,
+                    slug: dyn.slug,
+                    description: dyn.description || `Verified guides, articles and news in ${dyn.title} on EveryGyan.`,
+                    icon: dyn.icon || 'Folder',
+                    color: dyn.color || '#e11d48',
+                    badgeBg: 'bg-red-50',
+                    badgeText: 'text-red-700',
+                  };
+                  crumbs = [{ name: dyn.title }];
+                }
+              } catch {
+                // Ignore and use fallback
+              }
             }
 
             if (!cat) {
-              const formattedName = normalizedSlug
+              const formattedName = lastSlugSegment
                 .split('-')
                 .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
                 .join(' ');
@@ -122,11 +195,17 @@ export const CategoryPage: React.FC = () => {
                 badgeBg: 'bg-slate-50',
                 badgeText: 'text-slate-700',
               };
+              crumbs = [{ name: formattedName }];
             }
           }
         }
 
+        if (crumbs.length === 0 && cat) {
+          crumbs = [{ name: cat.name }];
+        }
+
         setCategory(cat);
+        setBreadcrumbs(crumbs);
         const result = await fetchArticlesByCategoryPaginated(slug, page, 6);
         setPaginatedData(result);
       } catch (err) {
@@ -168,14 +247,36 @@ export const CategoryPage: React.FC = () => {
       />
 
       {/* Breadcrumbs */}
-      <nav className="flex items-center space-x-2 text-xs text-slate-500" aria-label="Breadcrumb">
-        <Link to="/" className="hover:text-red-600 transition-colors">
+      <nav className="flex items-center space-x-2 text-xs text-slate-500 overflow-x-auto py-1" aria-label="Breadcrumb">
+        <Link to="/" className="hover:text-red-600 transition-colors flex-shrink-0">
           Home
         </Link>
-        <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-slate-800 font-semibold capitalize">
-          {category?.name || slug}
-        </span>
+        {breadcrumbs.length > 0 ? (
+          breadcrumbs.map((crumb, idx) => {
+            const isLast = idx === breadcrumbs.length - 1;
+            return (
+              <React.Fragment key={crumb.name + idx}>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                {isLast || !crumb.path ? (
+                  <span className="text-slate-800 font-semibold capitalize flex-shrink-0">
+                    {crumb.name}
+                  </span>
+                ) : (
+                  <Link to={crumb.path} className="hover:text-red-600 transition-colors capitalize flex-shrink-0">
+                    {crumb.name}
+                  </Link>
+                )}
+              </React.Fragment>
+            );
+          })
+        ) : (
+          <>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-slate-800 font-semibold capitalize">
+              {category?.name || slug}
+            </span>
+          </>
+        )}
       </nav>
 
       {/* Category Header */}

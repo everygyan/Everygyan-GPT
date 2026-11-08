@@ -61,7 +61,7 @@ export const DEFAULT_NAVIGATION: NavigationMenuItem[] = [
 export const LOCAL_NAV_OVERRIDES_KEY = 'everygyan_navigation_overrides';
 export const LOCAL_NAV_STORAGE_KEY = 'everygyan_navigation_tree';
 
-type NavigationOverrideMap = Record<string, { visible?: boolean; name?: string; display_order?: number }>;
+type NavigationOverrideMap = Record<string, { visible?: boolean; name?: string; display_order?: number; parent_id?: string | null }>;
 
 function getLocalOverrides(): NavigationOverrideMap {
   if (typeof window === 'undefined') return {};
@@ -83,6 +83,7 @@ function saveLocalOverride(idOrPath: string, updates: Partial<NavigationMenuItem
       ...(updates.visible !== undefined ? { visible: updates.visible } : {}),
       ...(updates.name !== undefined ? { name: updates.name } : {}),
       ...(updates.display_order !== undefined ? { display_order: updates.display_order } : {}),
+      ...(updates.parent_id !== undefined ? { parent_id: updates.parent_id } : {}),
     };
     current[idOrPath] = updated;
     if (altKey) {
@@ -123,29 +124,25 @@ function applyOverrides(tree: NavigationMenuItem[]): NavigationMenuItem[] {
   const overrides = getLocalOverrides();
   if (Object.keys(overrides).length === 0) return tree;
 
-  return tree.map((parent) => {
-    const parentOverride = overrides[parent.id] ?? (parent.path ? overrides[parent.path] : undefined);
-    const updatedParent: NavigationMenuItem = {
-      ...parent,
-      ...(parentOverride?.visible !== undefined ? { visible: parentOverride.visible } : {}),
-      ...(parentOverride?.name !== undefined ? { name: parentOverride.name } : {}),
-      ...(parentOverride?.display_order !== undefined ? { display_order: parentOverride.display_order } : {}),
-    };
+  const applyRecursive = (items: NavigationMenuItem[]): NavigationMenuItem[] => {
+    return items.map((item) => {
+      const itemOverride = overrides[item.id] ?? (item.path ? overrides[item.path] : undefined);
+      const updated: NavigationMenuItem = {
+        ...item,
+        ...(itemOverride?.visible !== undefined ? { visible: itemOverride.visible } : {}),
+        ...(itemOverride?.name !== undefined ? { name: itemOverride.name } : {}),
+        ...(itemOverride?.display_order !== undefined ? { display_order: itemOverride.display_order } : {}),
+      };
 
-    if (parent.children && parent.children.length > 0) {
-      updatedParent.children = parent.children.map((child) => {
-        const childOverride = overrides[child.id] ?? (child.path ? overrides[child.path] : undefined);
-        return {
-          ...child,
-          ...(childOverride?.visible !== undefined ? { visible: childOverride.visible } : {}),
-          ...(childOverride?.name !== undefined ? { name: childOverride.name } : {}),
-          ...(childOverride?.display_order !== undefined ? { display_order: childOverride.display_order } : {}),
-        };
-      });
-    }
+      if (item.children && item.children.length > 0) {
+        updated.children = applyRecursive(item.children);
+      }
 
-    return updatedParent;
-  });
+      return updated;
+    });
+  };
+
+  return applyRecursive(tree);
 }
 
 // In-memory cache
@@ -168,16 +165,202 @@ function mapRow(row: Record<string, unknown>): NavigationMenuItem {
 }
 
 function buildTree(flatItems: NavigationMenuItem[]): NavigationMenuItem[] {
-  const topLevel = flatItems
-    .filter((item) => !item.parent_id)
-    .sort((a, b) => a.display_order - b.display_order);
+  const itemMap = new Map<string, NavigationMenuItem>();
+  const pathToItemMap = new Map<string, NavigationMenuItem>();
 
-  return topLevel.map((parent) => ({
-    ...parent,
-    children: flatItems
-      .filter((child) => child.parent_id === parent.id)
-      .sort((a, b) => a.display_order - b.display_order),
-  }));
+  flatItems.forEach((item) => {
+    const node: NavigationMenuItem = { ...item, children: [] };
+    itemMap.set(item.id, node);
+    if (item.path) {
+      pathToItemMap.set(item.path, node);
+      const normPath = item.path.toLowerCase().replace(/^\/+|\/+$/g, '');
+      pathToItemMap.set(normPath, node);
+    }
+  });
+
+  const roots: NavigationMenuItem[] = [];
+
+  flatItems.forEach((item) => {
+    const current = itemMap.get(item.id)!;
+    let parent: NavigationMenuItem | undefined;
+
+    if (item.parent_id) {
+      parent = itemMap.get(item.parent_id);
+      if (!parent) {
+        parent = pathToItemMap.get(item.parent_id);
+      }
+      if (!parent && item.parent_id.startsWith('nav-')) {
+        const slug = item.parent_id.replace(/^nav-/, '');
+        parent = pathToItemMap.get(slug) || pathToItemMap.get(`category/${slug}`);
+      }
+    }
+
+    if (parent) {
+      parent.children = parent.children || [];
+      if (!parent.children.some((c) => c.id === current.id || (c.path && c.path === current.path))) {
+        parent.children.push(current);
+      }
+    } else {
+      roots.push(current);
+    }
+  });
+
+  const sortRecursive = (items: NavigationMenuItem[]): NavigationMenuItem[] => {
+    items.sort((a, b) => a.display_order - b.display_order);
+    items.forEach((child) => {
+      if (child.children && child.children.length > 0) {
+        sortRecursive(child.children);
+      }
+    });
+    return items;
+  };
+
+  return sortRecursive(roots);
+}
+
+/**
+ * Finds a node anywhere in the navigation tree by ID or path.
+ */
+export function findNodeInTree(nodes: NavigationMenuItem[], idOrPath: string): NavigationMenuItem | null {
+  for (const node of nodes) {
+    if (node.id === idOrPath || node.path === idOrPath) {
+      return node;
+    }
+    if (node.children && node.children.length > 0) {
+      const found = findNodeInTree(node.children, idOrPath);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+export interface SelectableParentItem {
+  id: string;
+  name: string;
+  path: string;
+  lineage: string;
+  depth: number;
+}
+
+/**
+ * Returns all selectable parents across all levels with formatted lineage (e.g. Travel > Asia)
+ */
+export function getSelectableParents(tree: NavigationMenuItem[]): SelectableParentItem[] {
+  const result: SelectableParentItem[] = [];
+
+  const traverse = (items: NavigationMenuItem[], lineage: string[] = [], depth: number = 0) => {
+    for (const item of items) {
+      const currentLineage = [...lineage, item.name];
+      result.push({
+        id: item.id,
+        name: item.name,
+        path: item.path,
+        lineage: currentLineage.join(' > '),
+        depth,
+      });
+
+      if (item.children && item.children.length > 0) {
+        traverse(item.children, currentLineage, depth + 1);
+      }
+    }
+  };
+
+  traverse(tree);
+  return result;
+}
+
+export interface NavigationCategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+  displayName: string;
+  depth: number;
+  path: string;
+}
+
+/**
+ * Returns all categories and subcategories defined in navigation for ArticleEditor and filters.
+ */
+export function getAllNavigationCategories(tree: NavigationMenuItem[]): NavigationCategoryOption[] {
+  const categories: NavigationCategoryOption[] = [];
+
+  const traverse = (items: NavigationMenuItem[], parents: string[] = [], depth: number = 0) => {
+    for (const item of items) {
+      let slug = '';
+      if (item.path.startsWith('/category/')) {
+        slug = item.path.replace('/category/', '').trim();
+      } else {
+        slug = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      }
+
+      const fullLineage = [...parents, item.name];
+
+      if (item.path.startsWith('/category/') || depth > 0) {
+        categories.push({
+          id: item.id,
+          name: item.name,
+          slug,
+          displayName: fullLineage.join(' > '),
+          depth,
+          path: item.path,
+        });
+      }
+
+      if (item.children && item.children.length > 0) {
+        traverse(item.children, fullLineage, depth + 1);
+      }
+    }
+  };
+
+  traverse(tree);
+  return categories;
+}
+
+/**
+ * Returns all descendant slugs/names for a given category slug.
+ * Useful for rolled-up article archives (e.g. clicking Asia shows Japan articles).
+ */
+export function findDescendantSlugs(tree: NavigationMenuItem[], categorySlug: string): string[] {
+  const normalized = categorySlug.toLowerCase().trim();
+  const normalizedLast = normalized.split('/').pop() || normalized;
+  const descendants: string[] = [];
+
+  const traverse = (items: NavigationMenuItem[], underTarget: boolean) => {
+    for (const item of items) {
+      let itemSlug = '';
+      if (item.path.startsWith('/category/')) {
+        itemSlug = item.path.replace('/category/', '').toLowerCase().trim();
+      } else {
+        itemSlug = item.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      }
+
+      const itemLast = itemSlug.split('/').pop() || itemSlug;
+
+      const isMatch =
+        itemSlug === normalized ||
+        itemLast === normalizedLast ||
+        item.name.toLowerCase() === normalized ||
+        item.name.toLowerCase() === normalizedLast ||
+        item.path.toLowerCase() === `/category/${normalized}`;
+
+      const currentlyUnder = underTarget || isMatch;
+
+      if (underTarget) {
+        descendants.push(itemSlug);
+        if (itemSlug.includes('/')) {
+          descendants.push(itemSlug.split('/').pop()!);
+        }
+        descendants.push(item.name.toLowerCase());
+      }
+
+      if (item.children && item.children.length > 0) {
+        traverse(item.children, currentlyUnder);
+      }
+    }
+  };
+
+  traverse(tree, false);
+  return [...new Set(descendants)];
 }
 
 /**
@@ -208,6 +391,46 @@ export async function fetchNavigationMenu(): Promise<NavigationMenuItem[]> {
     }
 
     const flatItems = (data as Record<string, unknown>[]).map(mapRow);
+    const overrides = getLocalOverrides();
+
+    // 1. Apply local overrides (visible, name, display_order, parent_id)
+    flatItems.forEach((item) => {
+      const override = overrides[item.id] ?? (item.path ? overrides[item.path] : undefined);
+      if (override) {
+        if (override.visible !== undefined) item.visible = override.visible;
+        if (override.name !== undefined) item.name = override.name;
+        if (override.display_order !== undefined) item.display_order = override.display_order;
+        if (override.parent_id !== undefined) item.parent_id = override.parent_id;
+      }
+    });
+
+    // 2. Merge locally created/updated items from storage/cache
+    const savedTree = getTreeFromStorage();
+    const sourceTree = savedTree && savedTree.length > 0 ? savedTree : cachedNavigation;
+    if (sourceTree && sourceTree.length > 0) {
+      const localFlat: NavigationMenuItem[] = [];
+      const collectFlat = (nodes: NavigationMenuItem[], parentId: string | null = null) => {
+        for (const n of nodes) {
+          localFlat.push({ ...n, parent_id: n.parent_id || parentId, children: undefined });
+          if (n.children && n.children.length > 0) {
+            collectFlat(n.children, n.id);
+          }
+        }
+      };
+      collectFlat(sourceTree);
+
+      for (const localItem of localFlat) {
+        const existingIdx = flatItems.findIndex(
+          (dbItem) => dbItem.id === localItem.id || (dbItem.path && dbItem.path === localItem.path)
+        );
+        if (existingIdx === -1) {
+          flatItems.push(localItem);
+        } else if (localItem.parent_id && localItem.parent_id !== flatItems[existingIdx].parent_id) {
+          flatItems[existingIdx].parent_id = localItem.parent_id;
+        }
+      }
+    }
+
     const tree = buildTree(flatItems);
     const finalTree = applyOverrides(tree);
     cachedNavigation = finalTree;
@@ -229,14 +452,17 @@ export async function fetchNavigationMenu(): Promise<NavigationMenuItem[]> {
 export async function fetchAllNavigationItemsFlat(): Promise<NavigationMenuItem[]> {
   const tree = await fetchNavigationMenu();
   const flat: NavigationMenuItem[] = [];
-  for (const item of tree) {
-    flat.push({ ...item, children: undefined });
-    if (item.children) {
-      for (const child of item.children) {
-        flat.push({ ...child, parent_id: item.id });
+
+  const flattenRecursive = (nodes: NavigationMenuItem[], parentId: string | null = null) => {
+    for (const node of nodes) {
+      flat.push({ ...node, parent_id: parentId, children: undefined });
+      if (node.children && node.children.length > 0) {
+        flattenRecursive(node.children, node.id);
       }
     }
-  }
+  };
+
+  flattenRecursive(tree);
   return flat;
 }
 
@@ -249,23 +475,44 @@ export async function createNavigationItem(
   const newItem: NavigationMenuItem = {
     ...item,
     id: `nav-${Date.now()}`,
+    children: [],
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 
-  if (newItem.parent_id) {
-    cachedNavigation = cachedNavigation.map((parent) => {
-      if (parent.id === newItem.parent_id) {
-        return {
-          ...parent,
-          children: [...(parent.children || []), newItem],
-        };
+  // Helper to insert into tree at any depth
+  const insertRecursive = (nodes: NavigationMenuItem[]): boolean => {
+    for (const node of nodes) {
+      if (node.id === newItem.parent_id || (newItem.parent_id && node.path === newItem.parent_id)) {
+        node.children = [...(node.children || []), newItem];
+        return true;
       }
-      return parent;
-    });
+      if (node.children && node.children.length > 0) {
+        if (insertRecursive(node.children)) return true;
+      }
+    }
+    return false;
+  };
+
+  if (newItem.parent_id) {
+    const inserted = insertRecursive(cachedNavigation);
+    if (!inserted) {
+      cachedNavigation.push(newItem);
+    }
   } else {
     cachedNavigation.push(newItem);
   }
+
+  saveLocalOverride(
+    newItem.id,
+    {
+      visible: newItem.visible,
+      name: newItem.name,
+      parent_id: newItem.parent_id,
+      display_order: newItem.display_order,
+    },
+    newItem.path
+  );
 
   saveTreeToStorage(cachedNavigation);
   broadcastNavUpdate({ item: newItem });
@@ -275,6 +522,27 @@ export async function createNavigationItem(
   }
 
   try {
+    let resolvedParentUuid: string | null = null;
+    if (newItem.parent_id) {
+      const isParentUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newItem.parent_id);
+      if (isParentUuid) {
+        resolvedParentUuid = newItem.parent_id;
+      } else {
+        const parentNode = findNodeInTree(cachedNavigation, newItem.parent_id);
+        if (parentNode) {
+          const { data: parentRow } = await supabase
+            .from('navigation_menus')
+            .select('id')
+            .eq('path', parentNode.path)
+            .maybeSingle();
+
+          if (parentRow?.id) {
+            resolvedParentUuid = parentRow.id;
+          }
+        }
+      }
+    }
+
     const payload: Record<string, unknown> = {
       name: item.name,
       type: item.type,
@@ -283,13 +551,8 @@ export async function createNavigationItem(
       badge: item.badge || null,
       display_order: item.display_order,
       visible: item.visible,
-      parent_id: item.parent_id || null,
+      parent_id: resolvedParentUuid,
     };
-
-    const isParentUuid = newItem.parent_id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newItem.parent_id) : true;
-    if (!isParentUuid) {
-      payload.parent_id = null;
-    }
 
     const { data, error } = await supabase
       .from('navigation_menus')
@@ -321,23 +584,19 @@ export async function updateNavigationItem(
   // 1. Immediately persist to localStorage overrides (keyed by ID and path)
   saveLocalOverride(id, updates, itemPath);
 
-  // 2. Immediately update in-memory cache
-  cachedNavigation = cachedNavigation.map((parent) => {
-    const matchesParent = parent.id === id || (itemPath && parent.path === itemPath);
-    const updatedParent = matchesParent ? { ...parent, ...updates } : parent;
+  // 2. Immediately update in-memory cache recursively at any depth
+  const updateRecursive = (nodes: NavigationMenuItem[]): NavigationMenuItem[] => {
+    return nodes.map((node) => {
+      const matches = node.id === id || (itemPath && node.path === itemPath);
+      const updatedNode = matches ? { ...node, ...updates } : node;
+      if (updatedNode.children && updatedNode.children.length > 0) {
+        updatedNode.children = updateRecursive(updatedNode.children);
+      }
+      return updatedNode;
+    });
+  };
 
-    if (updatedParent.children) {
-      return {
-        ...updatedParent,
-        children: updatedParent.children.map((child) => {
-          const matchesChild = child.id === id || (itemPath && child.path === itemPath);
-          return matchesChild ? { ...child, ...updates } : child;
-        }),
-      };
-    }
-    return updatedParent;
-  });
-
+  cachedNavigation = updateRecursive(cachedNavigation);
   saveTreeToStorage(cachedNavigation);
 
   // 3. Broadcast real-time event to all listening components
@@ -380,16 +639,19 @@ export async function deleteNavigationItem(
   id: string,
   itemPath?: string
 ): Promise<{ success: boolean; error?: string }> {
-  // Mark as hidden & remove from local cache
+  // Mark as hidden & remove from local cache recursively
   saveLocalOverride(id, { visible: false }, itemPath);
 
-  cachedNavigation = cachedNavigation
-    .filter((parent) => parent.id !== id && (!itemPath || parent.path !== itemPath))
-    .map((parent) => ({
-      ...parent,
-      children: parent.children?.filter((child) => child.id !== id && (!itemPath || child.path !== itemPath)),
-    }));
+  const deleteRecursive = (nodes: NavigationMenuItem[]): NavigationMenuItem[] => {
+    return nodes
+      .filter((node) => node.id !== id && (!itemPath || node.path !== itemPath))
+      .map((node) => ({
+        ...node,
+        children: node.children ? deleteRecursive(node.children) : undefined,
+      }));
+  };
 
+  cachedNavigation = deleteRecursive(cachedNavigation);
   saveTreeToStorage(cachedNavigation);
   broadcastNavUpdate({ id, deleted: true, path: itemPath });
 

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Search, User, Menu, X, ArrowRight, ChevronDown } from 'lucide-react';
+import { Search, User, Menu, X, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
 import { NavigationMenuItem } from '../../types';
 import { fetchNavigationMenu, DEFAULT_NAVIGATION } from '../../services/navigationService';
 
@@ -20,7 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [navItems, setNavItems] = useState<NavigationMenuItem[]>(DEFAULT_NAVIGATION);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [hoveredSubId, setHoveredSubId] = useState<string | null>(null);
   const [mobileExpanded, setMobileExpanded] = useState<Record<string, boolean>>({});
+  const [mobileSubExpanded, setMobileSubExpanded] = useState<Record<string, boolean>>({});
   const location = useLocation();
   const navRef = useRef<HTMLDivElement>(null);
 
@@ -63,11 +65,13 @@ export const Header: React.FC<HeaderProps> = ({
     const handleOutsideClick = (e: MouseEvent) => {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setActiveDropdown(null);
+        setHoveredSubId(null);
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActiveDropdown(null);
+        setHoveredSubId(null);
         setMobileMenuOpen(false);
       }
     };
@@ -83,6 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
   // Close dropdown and drawer when location changes
   useEffect(() => {
     setActiveDropdown(null);
+    setHoveredSubId(null);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -155,7 +160,10 @@ export const Header: React.FC<HeaderProps> = ({
                   key={item.id || item.name}
                   className="relative"
                   onMouseEnter={() => setActiveDropdown(item.name)}
-                  onMouseLeave={() => setActiveDropdown(null)}
+                  onMouseLeave={() => {
+                    setActiveDropdown(null);
+                    setHoveredSubId(null);
+                  }}
                 >
                   <div className="flex items-center">
                     <Link
@@ -170,7 +178,11 @@ export const Header: React.FC<HeaderProps> = ({
                     </Link>
                     <button
                       type="button"
-                      onClick={() => setActiveDropdown(isOpen ? null : item.name)}
+                      onClick={() => {
+                        const nextOpen = isOpen ? null : item.name;
+                        setActiveDropdown(nextOpen);
+                        if (!nextOpen) setHoveredSubId(null);
+                      }}
                       className={`pr-2.5 pl-1 py-2 text-xs xl:text-sm rounded-r-md transition-colors focus:outline-none ${
                         isDirectActive || isChildActive
                           ? 'text-white bg-slate-800'
@@ -196,7 +208,10 @@ export const Header: React.FC<HeaderProps> = ({
                           <span>{item.name} Topics</span>
                           <Link
                             to={item.path}
-                            onClick={() => setActiveDropdown(null)}
+                            onClick={() => {
+                              setActiveDropdown(null);
+                              setHoveredSubId(null);
+                            }}
                             className="text-red-400 hover:text-red-300 text-[10px] font-bold lowercase"
                           >
                             view all →
@@ -204,29 +219,100 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                         {visibleChildren.map((sub) => {
                           const isSubActive = location.pathname === sub.path;
+                          const visibleGrandchildren = (sub.children || []).filter((gc) => gc.visible);
+                          const hasSubDropdown = visibleGrandchildren.length > 0;
+                          const isSubHovered = hoveredSubId === sub.id;
+
                           return (
-                            <Link
+                            <div
                               key={sub.id || sub.name}
-                              to={sub.path}
-                              onClick={() => setActiveDropdown(null)}
-                              className={`flex flex-col px-3 py-2 rounded-xl text-xs transition-colors ${
-                                isSubActive
-                                  ? 'bg-slate-800 text-white font-bold'
-                                  : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
-                              }`}
+                              className="relative group/sub"
+                              onMouseEnter={() => setHoveredSubId(sub.id)}
                             >
-                              <span className="font-semibold text-slate-100 flex items-center justify-between">
-                                <span>{sub.name}</span>
-                                {isSubActive && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                              <Link
+                                to={sub.path}
+                                onClick={() => {
+                                  setActiveDropdown(null);
+                                  setHoveredSubId(null);
+                                }}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
+                                  isSubActive
+                                    ? 'bg-slate-800 text-white font-bold'
+                                    : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+                                }`}
+                              >
+                                <div className="flex flex-col min-w-0 pr-2">
+                                  <span className="font-semibold text-slate-100 flex items-center gap-1.5">
+                                    <span>{sub.name}</span>
+                                    {isSubActive && (
+                                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                                    )}
+                                  </span>
+                                  {sub.description && (
+                                    <span className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                                      {sub.description}
+                                    </span>
+                                  )}
+                                </div>
+                                {hasSubDropdown && (
+                                  <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover/sub:text-red-400 group-hover/sub:translate-x-0.5 transition-all flex-shrink-0 ml-auto" />
                                 )}
-                              </span>
-                              {sub.description && (
-                                <span className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
-                                  {sub.description}
-                                </span>
+                              </Link>
+
+                              {/* Cascading Flyout Submenu for Sub-Pages (e.g. Travel > Asia > Japan) */}
+                              {hasSubDropdown && isSubHovered && (
+                                <div
+                                  className="absolute left-full top-0 pl-1.5 w-60 z-50"
+                                  onMouseEnter={() => setHoveredSubId(sub.id)}
+                                >
+                                  <div className="bg-[#0f172a] border border-slate-700/80 rounded-2xl shadow-2xl py-2 px-1 backdrop-blur-xl">
+                                    <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800/80 mb-1 flex items-center justify-between">
+                                      <span>{sub.name} Topics</span>
+                                      <Link
+                                        to={sub.path}
+                                        onClick={() => {
+                                          setActiveDropdown(null);
+                                          setHoveredSubId(null);
+                                        }}
+                                        className="text-red-400 hover:text-red-300 text-[10px] font-bold lowercase"
+                                      >
+                                        view all →
+                                      </Link>
+                                    </div>
+                                    {visibleGrandchildren.map((gc) => {
+                                      const isGcActive = location.pathname === gc.path;
+                                      return (
+                                        <Link
+                                          key={gc.id || gc.name}
+                                          to={gc.path}
+                                          onClick={() => {
+                                            setActiveDropdown(null);
+                                            setHoveredSubId(null);
+                                          }}
+                                          className={`flex flex-col px-3 py-2 rounded-xl text-xs transition-colors ${
+                                            isGcActive
+                                              ? 'bg-slate-800 text-white font-bold'
+                                              : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
+                                          }`}
+                                        >
+                                          <span className="font-semibold text-slate-100 flex items-center justify-between">
+                                            <span>{gc.name}</span>
+                                            {isGcActive && (
+                                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                            )}
+                                          </span>
+                                          {gc.description && (
+                                            <span className="text-[11px] text-slate-400 font-normal truncate mt-0.5">
+                                              {gc.description}
+                                            </span>
+                                          )}
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               )}
-                            </Link>
+                            </div>
                           );
                         })}
                       </div>
@@ -360,20 +446,67 @@ export const Header: React.FC<HeaderProps> = ({
 
                   {isExpanded && (
                     <div className="pl-4 pr-2 pb-2 space-y-1">
-                      {visibleChildren.map((sub) => (
-                        <Link
-                          key={sub.id || sub.name}
-                          to={sub.path}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className={`block px-3 py-2 text-xs rounded-lg ${
-                            location.pathname === sub.path
-                              ? 'bg-slate-800 text-red-400 font-bold'
-                              : 'text-slate-300 hover:bg-slate-800/60'
-                          }`}
-                        >
-                          {sub.name}
-                        </Link>
-                      ))}
+                      {visibleChildren.map((sub) => {
+                        const visibleGrandchildren = (sub.children || []).filter((gc) => gc.visible);
+                        const hasSubChildren = visibleGrandchildren.length > 0;
+                        const isSubExpanded = Boolean(mobileSubExpanded[sub.id || sub.name]);
+
+                        return (
+                          <div key={sub.id || sub.name} className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <Link
+                                to={sub.path}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={`block px-3 py-2 text-xs rounded-lg flex-1 ${
+                                  location.pathname === sub.path
+                                    ? 'bg-slate-800 text-red-400 font-bold'
+                                    : 'text-slate-300 hover:bg-slate-800/60'
+                                }`}
+                              >
+                                {sub.name}
+                              </Link>
+                              {hasSubChildren && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setMobileSubExpanded((prev) => ({
+                                      ...prev,
+                                      [sub.id || sub.name]: !prev[sub.id || sub.name],
+                                    }))
+                                  }
+                                  className="p-1.5 text-slate-400 hover:text-white"
+                                  aria-label={`Toggle ${sub.name} sub-items`}
+                                >
+                                  <ChevronDown
+                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                      isSubExpanded ? 'rotate-180 text-red-400' : ''
+                                    }`}
+                                  />
+                                </button>
+                              )}
+                            </div>
+
+                            {hasSubChildren && isSubExpanded && (
+                              <div className="pl-5 space-y-1 border-l border-slate-800/70 ml-3">
+                                {visibleGrandchildren.map((gc) => (
+                                  <Link
+                                    key={gc.id || gc.name}
+                                    to={gc.path}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`block px-3 py-1.5 text-[11px] rounded-lg ${
+                                      location.pathname === gc.path
+                                        ? 'bg-slate-800 text-red-400 font-bold'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+                                    }`}
+                                  >
+                                    {gc.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

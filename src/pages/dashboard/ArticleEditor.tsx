@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { CATEGORIES } from '../../data/seedData';
-import { fetchDynamicPages } from '../../services/navigationService';
+import { fetchDynamicPages, fetchNavigationMenu, getAllNavigationCategories } from '../../services/navigationService';
 import { ArticleStatus, TemplateType, TravelTemplateData, TutorialTemplateData } from '../../types';
 import { TravelGuideTemplate } from '../../components/article/TravelGuideTemplate';
 import { TutorialTemplate } from '../../components/article/TutorialTemplate';
@@ -50,7 +50,7 @@ export const ArticleEditor: React.FC = () => {
   const [slugEdited, setSlugEdited] = useState(false);
   const [excerpt, setExcerpt] = useState('');
   const [content, setContent] = useState('');
-  const [availableCategories, setAvailableCategories] = useState<{ id: string; name: string; slug: string }[]>(CATEGORIES);
+  const [availableCategories, setAvailableCategories] = useState<{ id: string; name: string; slug: string; displayName?: string }[]>(CATEGORIES);
   const [category, setCategory] = useState(CATEGORIES[0].name);
   const [categorySlug, setCategorySlug] = useState(CATEGORIES[0].slug);
   const [tags, setTags] = useState<string[]>([]);
@@ -132,19 +132,52 @@ export const ArticleEditor: React.FC = () => {
     loadData();
   }, [id]);
 
-  // Load dynamically created pages to populate available categories
+  // Load dynamically created pages & navigation hierarchy to populate available categories
   useEffect(() => {
     let isMounted = true;
-    fetchDynamicPages().then((dynamicPages) => {
-      if (isMounted && dynamicPages && dynamicPages.length > 0) {
-        const customCats = dynamicPages
-          .filter((p) => !CATEGORIES.some((c) => c.slug.toLowerCase() === p.slug.toLowerCase()))
-          .map((p) => ({ id: `dyn-${p.id}`, name: p.title, slug: p.slug }));
-        if (customCats.length > 0) {
-          setAvailableCategories([...CATEGORIES, ...customCats]);
+    Promise.all([fetchDynamicPages(), fetchNavigationMenu()]).then(([dynamicPages, navTree]) => {
+      if (!isMounted) return;
+
+      const navCats = getAllNavigationCategories(navTree);
+      const catMap = new Map<string, { id: string; name: string; slug: string; displayName?: string }>();
+
+      // 1. Add base seed categories
+      CATEGORIES.forEach((c) => {
+        catMap.set(c.slug.toLowerCase(), {
+          id: c.id,
+          name: c.name,
+          slug: c.slug,
+          displayName: c.name,
+        });
+      });
+
+      // 2. Add dynamic pages
+      (dynamicPages || []).forEach((p) => {
+        const slugKey = p.slug.toLowerCase();
+        if (!catMap.has(slugKey)) {
+          catMap.set(slugKey, {
+            id: `dyn-${p.id}`,
+            name: p.title,
+            slug: p.slug,
+            displayName: p.title,
+          });
         }
-      }
+      });
+
+      // 3. Add all navigation categories & subcategories (including multi-level e.g. Travel > Asia > Japan)
+      (navCats || []).forEach((nc) => {
+        const slugKey = nc.slug.toLowerCase();
+        catMap.set(slugKey, {
+          id: nc.id,
+          name: nc.name,
+          slug: nc.slug,
+          displayName: nc.displayName,
+        });
+      });
+
+      setAvailableCategories(Array.from(catMap.values()));
     });
+
     return () => {
       isMounted = false;
     };
@@ -1099,8 +1132,8 @@ export const ArticleEditor: React.FC = () => {
                 className="w-full px-3.5 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
               >
                 {availableCategories.map((cat) => (
-                  <option key={cat.id} value={cat.slug}>
-                    {cat.name}
+                  <option key={cat.id || cat.slug} value={cat.slug}>
+                    {cat.displayName || cat.name}
                   </option>
                 ))}
               </select>

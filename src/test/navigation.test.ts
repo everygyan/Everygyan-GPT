@@ -3,8 +3,13 @@ import {
   fetchNavigationMenu,
   updateNavigationItem,
   deleteNavigationItem,
+  createNavigationItem,
+  getSelectableParents,
+  getAllNavigationCategories,
+  findDescendantSlugs,
   LOCAL_NAV_OVERRIDES_KEY,
 } from '../services/navigationService';
+import { fetchArticlesByCategoryPaginated } from '../services/articleService';
 
 describe('Navigation Menu Visibility & Persistence Suite', () => {
   beforeEach(() => {
@@ -109,5 +114,103 @@ describe('Navigation Menu Visibility & Persistence Suite', () => {
 
     // Item should either be excluded or marked hidden
     expect(deletedChild === undefined || deletedChild?.visible === false).toBe(true);
+  });
+
+  // ── Multi-Level Navigation & Sub-Page Hierarchy Tests ──
+
+  it('supports adding a sub-page under an existing sub-page (e.g. Japan under Asia)', async () => {
+    // 1. Add "Japan" with parent "nav-travel-asia" (Asia under Travel)
+    const addResult = await createNavigationItem({
+      name: 'Japan',
+      type: 'link',
+      path: '/category/travel-asia/japan',
+      description: 'Ancient temples, Tokyo districts & bullet trains',
+      display_order: 1,
+      visible: true,
+      parent_id: 'nav-travel-asia',
+    });
+
+    expect(addResult.item).toBeDefined();
+    expect(addResult.item?.name).toBe('Japan');
+
+    // 2. Fetch navigation menu and verify 3-level hierarchy
+    const menu = await fetchNavigationMenu();
+    const travel = menu.find((item) => item.name === 'Travel');
+    expect(travel).toBeDefined();
+
+    const asia = travel?.children?.find((child) => child.id === 'nav-travel-asia' || child.name === 'Asia');
+    expect(asia).toBeDefined();
+    expect(asia?.children).toBeDefined();
+
+    const japan = asia?.children?.find((sub) => sub.name === 'Japan');
+    expect(japan).toBeDefined();
+    expect(japan?.path).toBe('/category/travel-asia/japan');
+    expect(japan?.visible).toBe(true);
+  });
+
+  it('getSelectableParents lists multi-level hierarchy with depth and lineage', async () => {
+    const menu = await fetchNavigationMenu();
+    const selectable = getSelectableParents(menu);
+
+    expect(selectable.length).toBeGreaterThan(0);
+
+    const travelParent = selectable.find((p) => p.name === 'Travel');
+    expect(travelParent).toBeDefined();
+    expect(travelParent?.depth).toBe(0);
+
+    const asiaSub = selectable.find((p) => p.lineage === 'Travel > Asia');
+    expect(asiaSub).toBeDefined();
+    expect(asiaSub?.depth).toBe(1);
+  });
+
+  it('findDescendantSlugs correctly finds all nested slugs under a parent category', async () => {
+    await createNavigationItem({
+      name: 'Japan',
+      type: 'link',
+      path: '/category/travel-asia/japan',
+      display_order: 1,
+      visible: true,
+      parent_id: 'nav-travel-asia',
+    });
+
+    const menu = await fetchNavigationMenu();
+    const descendants = findDescendantSlugs(menu, 'travel-asia');
+
+    expect(descendants).toContain('travel-asia/japan');
+    expect(descendants).toContain('japan');
+  });
+
+  it('getAllNavigationCategories extracts all categories with lineage for ArticleEditor', async () => {
+    await createNavigationItem({
+      name: 'Japan',
+      type: 'link',
+      path: '/category/travel-asia/japan',
+      display_order: 1,
+      visible: true,
+      parent_id: 'nav-travel-asia',
+    });
+
+    const menu = await fetchNavigationMenu();
+    const categories = getAllNavigationCategories(menu);
+
+    const japanCat = categories.find((c) => c.name === 'Japan');
+    expect(japanCat).toBeDefined();
+    expect(japanCat?.displayName).toBe('Travel > Asia > Japan');
+  });
+
+  it('fetchArticlesByCategoryPaginated includes descendant sub-page articles when viewing parent (Asia)', async () => {
+    // There is an article about Kyoto and Tokyo with tag "Japan" and category "Asia Travel"
+    const asiaResult = await fetchArticlesByCategoryPaginated('travel-asia', 1, 10);
+    expect(asiaResult.total).toBeGreaterThan(0);
+
+    const hasJapanArticle = asiaResult.items.some(
+      (a) => a.title.includes('Kyoto') || a.tags.includes('Japan')
+    );
+    expect(hasJapanArticle).toBe(true);
+
+    // Also querying directly for 'japan' or 'travel-asia/japan' returns the Japan articles
+    const japanResult = await fetchArticlesByCategoryPaginated('travel-asia/japan', 1, 10);
+    expect(japanResult.total).toBeGreaterThan(0);
+    expect(japanResult.items[0].tags).toContain('Japan');
   });
 });

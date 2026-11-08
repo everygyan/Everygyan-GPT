@@ -15,6 +15,7 @@ import { Article, ArticleStatus } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
 import { fetchEditorialArticles, deleteArticle } from '../../services/cmsService';
 import { CATEGORIES } from '../../data/seedData';
+import { fetchNavigationMenu, getAllNavigationCategories, fetchDynamicPages } from '../../services/navigationService';
 
 export const DashboardArticles: React.FC = () => {
   const navigate = useNavigate();
@@ -25,8 +26,33 @@ export const DashboardArticles: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [categoryOptions, setCategoryOptions] = useState<{ slug: string; name: string }[]>(CATEGORIES);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([fetchDynamicPages(), fetchNavigationMenu()]).then(([dynPages, navTree]) => {
+      if (!isMounted) return;
+      const navCats = getAllNavigationCategories(navTree);
+      const catMap = new Map<string, { slug: string; name: string }>();
+
+      CATEGORIES.forEach((c) => catMap.set(c.slug.toLowerCase(), { slug: c.slug, name: c.name }));
+      (dynPages || []).forEach((p) => {
+        if (!catMap.has(p.slug.toLowerCase())) {
+          catMap.set(p.slug.toLowerCase(), { slug: p.slug, name: p.title });
+        }
+      });
+      (navCats || []).forEach((nc) => {
+        catMap.set(nc.slug.toLowerCase(), { slug: nc.slug, name: nc.displayName });
+      });
+
+      setCategoryOptions(Array.from(catMap.values()));
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -192,7 +218,7 @@ export const DashboardArticles: React.FC = () => {
             className="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             <option value="all">All Categories</option>
-            {CATEGORIES.map((c) => (
+            {categoryOptions.map((c) => (
               <option key={c.slug} value={c.slug}>
                 {c.name}
               </option>
