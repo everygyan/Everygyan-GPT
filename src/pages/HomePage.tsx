@@ -1,12 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { HeroLeadStory } from '../components/home/HeroLeadStory';
 import { LatestNewsSidebar } from '../components/home/LatestNewsSidebar';
+import { DailyPulseTicker } from '../components/home/DailyPulseTicker';
+import { TopicCompass } from '../components/home/TopicCompass';
+import { KnowledgeCapsules } from '../components/home/KnowledgeCapsules';
+import { BrainLoungeSpotlight } from '../components/home/BrainLoungeSpotlight';
 import { ArticleCard } from '../components/common/ArticleCard';
 import { NewsletterBanner } from '../components/common/NewsletterBanner';
 import { HeroSkeleton, SidebarSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 import { EmptyState } from '../components/common/EmptyState';
+import { Game2048Modal } from '../components/games/Game2048Modal';
+import { ChessGameModal } from '../components/games/ChessGameModal';
 import {
   fetchCarouselArticles,
   fetchLatestNews,
@@ -21,13 +27,20 @@ export const HomePage: React.FC = () => {
   const [featuredArticles, setFeaturedArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Interactive Game Modals launched right from the homepage
+  const [is2048Open, setIs2048Open] = useState(false);
+  const [isChessOpen, setIsChessOpen] = useState(false);
+
+  // Featured Articles Category Filter
+  const [activeTab, setActiveTab] = useState<'all' | 'travel' | 'tech' | 'health'>('all');
+
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
         const [carousel, news, featured] = await Promise.all([
           fetchCarouselArticles(),
-          fetchLatestNews(4),
+          fetchLatestNews(6),
           fetchFeaturedArticles(),
         ]);
         setCarouselArticles(carousel);
@@ -42,8 +55,22 @@ export const HomePage: React.FC = () => {
     loadData();
   }, []);
 
+  // Filtered featured articles based on selected tab
+  const displayedFeatured = useMemo(() => {
+    if (activeTab === 'all') return featuredArticles;
+    const filtered = featuredArticles.filter((art) => {
+      const slug = (art.category_slug || '').toLowerCase();
+      const cat = (art.category || '').toLowerCase();
+      if (activeTab === 'travel') return slug.includes('travel') || cat.includes('travel');
+      if (activeTab === 'tech') return slug.includes('tech') || cat.includes('tech') || slug.includes('ai') || cat.includes('ai');
+      if (activeTab === 'health') return slug.includes('health') || cat.includes('health');
+      return true;
+    });
+    return filtered.length > 0 ? filtered : featuredArticles;
+  }, [featuredArticles, activeTab]);
+
   return (
-    <div className="space-y-8 sm:space-y-12">
+    <div className="space-y-10 sm:space-y-14">
       <SeoHead
         title="EveryGyan — Knowledge for Everyone, Everywhere"
         description="Editorial learning tutorials, technology news, health insights, geopolitics analysis, sports coverage, and family-friendly travel guides."
@@ -124,7 +151,13 @@ export const HomePage: React.FC = () => {
       {/* Visually hidden H1 for screen reader heading hierarchy */}
       <h1 className="sr-only">EveryGyan — Knowledge for Everyone, Everywhere</h1>
 
-      {/* Top Hero Grid: Lead Story + Latest News Column */}
+      {/* 1. Daily Live Pulse & Trending Ticker */}
+      <DailyPulseTicker
+        trendingArticles={latestNews}
+        onOpenGames={() => setIs2048Open(true)}
+      />
+
+      {/* 2. Top Hero Grid: Lead Story + Latest News Column */}
       <section aria-label="Lead Story and Latest News">
         {loading ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
@@ -154,19 +187,70 @@ export const HomePage: React.FC = () => {
         )}
       </section>
 
-      {/* Featured Articles 3-Column Grid */}
-      <section aria-label="Featured Articles">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">
-            Featured Articles
-          </h2>
-          <Link
-            to="/category/tech"
-            className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-red-600 flex items-center gap-1 transition-colors"
-          >
-            <span>View all</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+      {/* 3. Knowledge Domains / Topic Compass Track */}
+      <TopicCompass />
+
+      {/* 4. Curator's Spotlight: Language, Logic & Audio Capsules */}
+      <KnowledgeCapsules
+        onPlay2048={() => setIs2048Open(true)}
+        onPlayChess={() => setIsChessOpen(true)}
+      />
+
+      {/* 5. Midday Brain Lounge: 2048 & Chess Interactive Arena */}
+      <BrainLoungeSpotlight
+        onPlay2048={() => setIs2048Open(true)}
+        onPlayChess={() => setIsChessOpen(true)}
+      />
+
+      {/* 6. Featured Articles & Editorial Deep Dives */}
+      <section aria-label="Featured Articles" className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-800 border border-red-200 mb-1.5">
+              <Sparkles className="w-3 h-3 text-red-600" />
+              <span>Editorial Selection</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+              Featured Articles
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Carefully researched longform guides, benchmarks, and tactical tutorials.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Category Filter Tabs */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-2xl text-xs font-semibold text-slate-600">
+              {(
+                [
+                  { id: 'all', label: 'All' },
+                  { id: 'travel', label: 'Travel' },
+                  { id: 'tech', label: 'Tech & AI' },
+                  { id: 'health', label: 'Health' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'bg-white text-slate-900 font-bold shadow-xs'
+                      : 'hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              to="/category/tech"
+              className="text-xs sm:text-sm font-bold text-slate-600 hover:text-red-600 flex items-center gap-1 transition-colors px-3 py-1.5 rounded-xl hover:bg-slate-100"
+            >
+              <span>View all</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
         {loading ? (
@@ -175,9 +259,9 @@ export const HomePage: React.FC = () => {
             <CardSkeleton />
             <CardSkeleton />
           </div>
-        ) : featuredArticles.length > 0 ? (
+        ) : displayedFeatured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredArticles.map((article) => (
+            {displayedFeatured.map((article) => (
               <ArticleCard key={article.id} article={article} />
             ))}
           </div>
@@ -186,8 +270,12 @@ export const HomePage: React.FC = () => {
         )}
       </section>
 
-      {/* Scenic Newsletter Banner */}
+      {/* 7. Scenic Mountain Newsletter Banner */}
       <NewsletterBanner />
+
+      {/* Interactive Game Modals */}
+      <Game2048Modal isOpen={is2048Open} onClose={() => setIs2048Open(false)} />
+      <ChessGameModal isOpen={isChessOpen} onClose={() => setIsChessOpen(false)} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles, Headphones, Clock, User } from 'lucide-react';
 import { Article } from '../../types';
 
 interface HeroLeadStoryProps {
@@ -12,12 +12,12 @@ export const HeroLeadStory: React.FC<HeroLeadStoryProps> = ({ articles }) => {
   const [isPaused, setIsPaused] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
-  // Auto-advance carousel every 5.5s, pausing on user hover or focus
+  // Auto-advance carousel every 6s, pausing on user hover or focus
   useEffect(() => {
     if (!articles || articles.length <= 1 || isPaused) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev === articles.length - 1 ? 0 : prev + 1));
-    }, 5500);
+    }, 6000);
     return () => clearInterval(timer);
   }, [articles, isPaused]);
 
@@ -65,7 +65,7 @@ export const HeroLeadStory: React.FC<HeroLeadStoryProps> = ({ articles }) => {
       onBlur={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      className="relative group rounded-2xl overflow-hidden shadow-lg aspect-[16/11] sm:aspect-[16/10] lg:aspect-[16/11] bg-slate-900 text-white flex flex-col justify-end select-none"
+      className="relative group rounded-3xl overflow-hidden shadow-xl aspect-[16/11] sm:aspect-[16/10] lg:aspect-[16/11] bg-slate-950 text-white flex flex-col justify-end select-none border border-slate-800/80"
     >
       {/* Background Image with smooth fade transition & fast high-priority loading */}
       <img
@@ -77,51 +77,51 @@ export const HeroLeadStory: React.FC<HeroLeadStoryProps> = ({ articles }) => {
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 motion-safe:group-hover:scale-105 motion-reduce:transform-none animate-fadeIn"
       />
 
-      {/* Dark Gradient Overlay for Maximum Readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent pointer-events-none" />
+      {/* Cinematic Multi-stop Dark Gradient Overlay for Maximum Readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-slate-950/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/60 via-transparent to-transparent pointer-events-none" />
+
+      {/* Top Floating Badges Bar */}
+      <div className="absolute top-4 sm:top-5 left-4 sm:left-6 right-4 sm:right-6 z-20 flex items-center justify-between gap-2 pointer-events-none">
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold tracking-wider uppercase bg-red-600/90 hover:bg-red-600 text-white rounded-full shadow-lg backdrop-blur-md border border-red-500/30 transition-all">
+            <Sparkles className="w-3 h-3 text-amber-300" />
+            <span>Lead Story</span>
+          </span>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium bg-slate-900/70 text-slate-200 rounded-full backdrop-blur-md border border-white/10">
+            <Headphones className="w-3 h-3 text-red-400" />
+            <span>Listen Available</span>
+          </span>
+        </div>
+
+        {/* Slide Counter & Indicators */}
+        {articles.length > 1 && (
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <span className="text-[10px] font-mono font-bold tracking-widest uppercase text-white/90 bg-slate-900/80 px-2.5 py-1 rounded-full border border-white/10 backdrop-blur-md">
+              0{currentIndex + 1} / 0{articles.length}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Slider Left/Right Buttons */}
       {articles.length > 1 && (
         <>
           <button
             onClick={handlePrev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white backdrop-blur-sm flex items-center justify-center transition-all opacity-80 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-950/60 hover:bg-red-600 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 border border-white/10 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-lg"
             aria-label="Previous story"
           >
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={handleNext}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-950/50 hover:bg-slate-950/80 text-white backdrop-blur-sm flex items-center justify-center transition-all opacity-80 group-hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-950/60 hover:bg-red-600 text-white backdrop-blur-md flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 border border-white/10 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-lg"
             aria-label="Next story"
           >
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </>
-      )}
-
-      {/* Slide Indicators & Counter */}
-      {articles.length > 1 && (
-        <div className="absolute top-4 right-4 z-20 flex items-center gap-2">
-          <span className="text-[10px] font-bold tracking-wider uppercase text-white/90 bg-slate-950/60 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-            {currentIndex + 1} / {articles.length}
-          </span>
-          <div className="flex items-center gap-1.5">
-            {articles.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentIndex(idx);
-                }}
-                className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                  idx === currentIndex ? 'w-6 bg-red-600' : 'w-2 bg-white/50 hover:bg-white/80'
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        </div>
       )}
 
       {/* Hero Content Text */}
@@ -132,37 +132,86 @@ export const HeroLeadStory: React.FC<HeroLeadStoryProps> = ({ articles }) => {
         aria-label={`${currentIndex + 1} of ${articles.length}: ${currentArticle.title}`}
       >
         {/* Category Pill Tag */}
-        <Link
-          to={`/category/${currentArticle.category_slug}`}
-          className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-red-600 text-white rounded-md mb-3 hover:bg-red-700 transition-colors shadow-sm"
-        >
-          {currentArticle.category}
-        </Link>
+        <div className="flex items-center gap-2 mb-3">
+          <Link
+            to={`/category/${currentArticle.category_slug}`}
+            className="inline-block px-3 py-1 text-xs font-bold uppercase tracking-wider bg-white/15 hover:bg-red-600 text-white rounded-lg backdrop-blur-md border border-white/20 transition-all shadow-sm"
+          >
+            {currentArticle.category}
+          </Link>
+          <span className="text-xs text-slate-300 font-medium flex items-center gap-1">
+            <Clock className="w-3 h-3 text-slate-400" />
+            {currentArticle.read_time}
+          </span>
+        </div>
 
         {/* Lead Headline */}
         <Link
           to={`/article/${currentArticle.slug}`}
-          className="block group/title focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded"
+          className="block group/title focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 rounded-lg"
         >
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight leading-tight group-hover/title:text-red-300 transition-colors mb-3">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight group-hover/title:text-red-300 transition-colors mb-3 drop-shadow-sm">
             {currentArticle.title}
           </h2>
         </Link>
 
         {/* Excerpt */}
-        <p className="text-slate-200 text-xs sm:text-sm sm:leading-relaxed line-clamp-2 sm:line-clamp-3 mb-4 max-w-2xl font-normal">
+        <p className="text-slate-300 text-xs sm:text-sm sm:leading-relaxed line-clamp-2 sm:line-clamp-3 mb-4 max-w-2xl font-normal">
           {currentArticle.excerpt}
         </p>
 
-        {/* Byline */}
-        <div className="flex items-center text-xs text-slate-300 font-medium space-x-2">
-          <span className="text-white font-semibold">By {currentArticle.author.name}</span>
-          <span>•</span>
-          <span>{currentArticle.published_at}</span>
-          <span>•</span>
-          <span>{currentArticle.read_time}</span>
+        {/* Byline with Author & Date */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
+          <div className="flex items-center gap-2.5">
+            {currentArticle.author.avatar ? (
+              <img
+                src={currentArticle.author.avatar}
+                alt=""
+                className="w-6 h-6 rounded-full object-cover border border-white/20"
+              />
+            ) : (
+              <div className="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center text-slate-300">
+                <User className="w-3.5 h-3.5" />
+              </div>
+            )}
+            <span className="text-white font-semibold">{currentArticle.author.name}</span>
+            <span className="text-slate-500">•</span>
+            <span className="text-slate-300">{currentArticle.published_at}</span>
+          </div>
+
+          <Link
+            to={`/article/${currentArticle.slug}`}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-red-400 hover:text-white transition-colors"
+          >
+            <span>Read full story</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
+
+      {/* Bottom Progress Bar Track */}
+      {articles.length > 1 && (
+        <div className="relative z-10 w-full h-1 bg-slate-800/80 flex">
+          {articles.map((_, idx) => (
+            <div
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className="flex-1 h-full cursor-pointer relative overflow-hidden border-r border-slate-900 last:border-0"
+              title={`Switch to story ${idx + 1}`}
+            >
+              <div
+                className={`h-full transition-all duration-300 ${
+                  idx === currentIndex
+                    ? 'w-full bg-gradient-to-r from-red-600 to-rose-400'
+                    : idx < currentIndex
+                    ? 'w-full bg-slate-600/50'
+                    : 'w-0'
+                }`}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
