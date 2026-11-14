@@ -1,0 +1,401 @@
+{
+  "name": "EveryGyan - Google Sheets Articles to Gemini Drafts with AI Infographics",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e01-trigger-manual",
+      "name": "Run On-Demand (Manual Trigger)",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "e02-trigger-schedule",
+      "name": "Hourly Schedule (Optional)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [200, 480]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "sheetName": {
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "e03-fetch-sheets",
+      "name": "Fetch Topics from Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [420, 380]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false
+          },
+          "conditions": [
+            {
+              "id": "cond-status-new",
+              "leftValue": "={{ $json.Status || $json.status }}",
+              "rightValue": "New",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      },
+      "id": "e04-filter-new",
+      "name": "Filter Status = 'New' Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [620, 380]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "e05-loop-topics",
+      "name": "Process One Topic at a Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [840, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nreturn {\n  json: {\n    topic: item.Topic || item.topic || item.Title || 'AI Breakthroughs',\n    category: (item.Category || item.category || 'tech').toLowerCase(),\n    target_audience: item.Audience || 'General',\n    source_url: item.Source || item.source_url || 'https://everygyan.com',\n    sheet_row_number: item.row_number || item._rowNumber || null\n  }\n};"
+      },
+      "id": "e06-prepare-context",
+      "name": "Prepare Topic Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1060, 380]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write an engaging, authoritative, well-researched 500-word editorial article for EveryGyan about: {{ $json.topic }}.\n\nCategory: {{ $json.category }}\n\nInclude:\n1. A compelling H1 headline.\n2. An engaging introduction paragraph.\n3. 3-4 structured body sections with H2 subheadings, bullet points, and key takeaways.\n4. A forward-looking conclusion.\n\nReturn strictly valid Markdown.",
+        "hasOutputParser": false
+      },
+      "id": "e07-generate-article",
+      "name": "Generate 500-Word Article...",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [1300, 380]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "e08-gemini-model",
+      "name": "Google Gemini Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1300, 580]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on this article about \"{{ $('Prepare Topic Context').item.json.topic }}\", create a detailed, visual image generation prompt (under 50 words) for a modern, clean editorial infographic and visual summary.\n\nArticle excerpt: {{ ($json.text || $json.content || '').slice(0, 600) }}\n\nStyle guidelines:\n- Modern vector editorial infographic or high-resolution illustration\n- Minimalist geometry, clean typography, soft balanced colors, 16:9 widescreen\n- Professional publication quality, no clutter, no distorted text\n\nOutput ONLY the prompt text.",
+        "hasOutputParser": false
+      },
+      "id": "e09-ai-image-agent",
+      "name": "AI Agent: Design Infographic Prompt",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [1560, 380]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "id": "e10-gemini-image-model",
+      "name": "Google Gemini Image Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [1560, 580]
+    },
+    {
+      "parameters": {
+        "jsCode": "const topicData = $('Prepare Topic Context').item.json;\nconst articleData = $('Generate 500-Word Article...').item.json;\nconst rawImagePrompt = $input.item.json.text || topicData.topic || 'editorial infographic';\n\n// Clean prompt and construct FLUX image URL\nconst cleaned = encodeURIComponent(\n  rawImagePrompt.replace(/[\\n\\r]+/g, ' ').slice(0, 280) + ', editorial infographic, modern aesthetic, 8k'\n);\nconst seed = Math.floor(Math.random() * 999999);\nconst imageUrl = `https://image.pollinations.ai/prompt/${cleaned}?width=1280&height=720&model=flux&nologo=true&seed=${seed}`;\n\nreturn {\n  json: {\n    topic: topicData.topic,\n    category: topicData.category,\n    source_url: topicData.source_url,\n    article_text: articleData.text || articleData.content || '',\n    image_prompt: rawImagePrompt,\n    image_url: imageUrl,\n    image_caption: `Visual Summary & Infographic: ${topicData.topic}`\n  }\n};"
+      },
+      "id": "e11-generate-image-url",
+      "name": "Generate AI Infographic URL (FLUX)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1820, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\nconst rawText = data.article_text || '';\n\n// Extract title from first markdown heading or fallback\nlet title = data.topic;\nconst headingMatch = rawText.match(/^#\\s+(.+)$/m);\nif (headingMatch && headingMatch[1]) {\n  title = headingMatch[1].replace(/[*_#]/g, '').trim();\n}\n\n// Embedded Infographic Markdown\nconst infographicBlock = `\\n\\n---\\n\\n## 📊 Visual Summary & Key Takeaways\\n\\n![${title}](${data.image_url})\\n*${data.image_caption}*\\n\\n---\\n\\n`;\n\n// Inject infographic after the introductory paragraph\nlet finalContent = rawText;\nif (finalContent.includes('\\n\\n')) {\n  const parts = finalContent.split('\\n\\n');\n  finalContent = parts[0] + '\\n\\n' + infographicBlock + parts.slice(1).join('\\n\\n');\n} else {\n  finalContent = infographicBlock + finalContent;\n}\n\nconst excerpt = rawText.replace(/#+\\s+/g, '').replace(/\\n+/g, ' ').slice(0, 160).trim() + '...';\n\nreturn {\n  json: {\n    request_id: `n8n-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,\n    title: title,\n    content: finalContent,\n    excerpt: excerpt,\n    category: (data.category || 'tech').toLowerCase(),\n    tags: [data.category.toUpperCase(), 'Automated Draft', 'AI Infographic'],\n    cover_image: data.image_url,\n    cover_caption: data.image_caption,\n    status: 'draft',\n    template_type: 'standard',\n    source_urls: [\n      {\n        title: `${title} - Research Source`,\n        url: data.source_url || 'https://everygyan.com'\n      }\n    ]\n  }\n};"
+      },
+      "id": "e12-format-validate",
+      "name": "Format & Validate EveryGyan Article",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2060, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://wlhvvajednmmqskpghaa.supabase.co/functions/v1/n8n-draft-ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "x-n8n-secret",
+              "value": "={{ $env.N8N_INGEST_SECRET || 'your-n8n-secret' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "e13-save-supabase",
+      "name": "Save Draft Post to Supabase",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2320, 380]
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst articleData = $('Format & Validate EveryGyan Article').item.json;\n\nreturn {\n  json: {\n    name: articleData.title,\n    content: articleData.content,\n    article_id: item.data?.article_id || 'unknown',\n    review_url: item.data?.review_url || 'https://everygyan.com/dashboard/articles'\n  }\n};"
+      },
+      "id": "e14-format-doc",
+      "name": "Format Article for Google Doc",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2540, 380]
+    },
+    {
+      "parameters": {
+        "operation": "createFromText",
+        "name": "={{ $json.name }}",
+        "content": "={{ $json.content }}",
+        "options": {}
+      },
+      "id": "e15-create-doc",
+      "name": "Create Formatted Google Doc in Drive",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [2760, 380]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "sheetName": {
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "e16-update-sheet",
+      "name": "Update Google Sheet (Status = Draft & Date)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [2980, 380]
+    }
+  ],
+  "connections": {
+    "Run On-Demand (Manual Trigger)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Topics from Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hourly Schedule (Optional)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Topics from Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Topics from Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Filter Status = 'New' Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Status = 'New' Only": {
+      "main": [
+        [
+          {
+            "node": "Process One Topic at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One Topic at a Time": {
+      "main": [
+        [
+          {
+            "node": "Prepare Topic Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Topic Context": {
+      "main": [
+        [
+          {
+            "node": "Generate 500-Word Article...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate 500-Word Article...": {
+      "main": [
+        [
+          {
+            "node": "AI Agent: Design Infographic Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate 500-Word Article...",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent: Design Infographic Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Infographic URL (FLUX)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Image Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent: Design Infographic Prompt",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Infographic URL (FLUX)": {
+      "main": [
+        [
+          {
+            "node": "Format & Validate EveryGyan Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format & Validate EveryGyan Article": {
+      "main": [
+        [
+          {
+            "node": "Save Draft Post to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Draft Post to Supabase": {
+      "main": [
+        [
+          {
+            "node": "Format Article for Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Article for Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Create Formatted Google Doc in Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Formatted Google Doc in Drive": {
+      "main": [
+        [
+          {
+            "node": "Update Google Sheet (Status = Draft & Date)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Google Sheet (Status = Draft & Date)": {
+      "main": [
+        [
+          {
+            "node": "Process One Topic at a Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
